@@ -1,0 +1,7 @@
+*.xml
+*.graph
+*.metadata
+index
+inspect
+search
+xml-stats

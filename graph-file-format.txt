@@ -1,0 +1,21 @@
+The file is an array of little-endian unsigned 32-bit integers.
+All sizes and indices are 32-bit values, which must be multiplied by 4 to obtain file offsets in bytes.
+The file size is limited to 2**32 entries (16 GiB).
+Vertex 0 is a reserved value which has no edges.
+
+Header
+  1 int: magic number 0x57494b49
+  1 int: total file size
+  1 int: number of vertices (V) including 0
+  1 int: offset of forward edge index
+  1 int: offset of backward edge index
+
+Forward edge index
+  V ints: offset of forward edge list (or 0 for empty)
+
+Backward edge index
+  V ints: offset of backward edge list (or 0 for empty)
+
+Edge list:
+  * ints: index of adjacent vertex (between 1 and V, exclusive)
+  1 int: 0 (end of list marker)
