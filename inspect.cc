@@ -18,12 +18,12 @@ void Inspect(index_t page_id) {
 
     std::cout << "Outgoing links:\n";
     for (index_t i : reader->Graph().ForwardEdges(page_id)) {
-        std::cout << " -> " << reader->PageRef(i) << '\n';
+        std::cout << " -> " << reader->ForwardLinkRef(page_id, i) << '\n';
     }
 
     std::cout << "Incoming links:\n";
     for (index_t i : reader->Graph().BackwardEdges(page_id)) {
-        std::cout << " <- " << reader->PageRef(i) << '\n';
+        std::cout << " <- " << reader->BackwardLinkRef(i, page_id) << '\n';
     }
 }
 

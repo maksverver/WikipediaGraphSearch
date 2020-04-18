@@ -3,5 +3,6 @@
 *.metadata
 index
 inspect
+pipe-trict_test
 search
 xml-stats

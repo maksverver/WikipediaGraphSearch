@@ -30,11 +30,11 @@ int main(int argc, char *argv[]) {
         std::cerr << "No path found!" << std::endl;
     } else {
         for (size_t i = 0; i < path.size(); ++i) {
-            index_t page_id = path[i];
-            std::cout << reader->PageRef(page_id) << '\n';
-
-            // TODO: also display link title (if set), with support for Pipe Trick?
-            // https://en.wikipedia.org/wiki/Help:Pipe_trick
+            if (i == 0) {
+                std::cout << reader->PageRef(path[i]) << '\n';
+            } else {
+                std::cout << reader->ForwardLinkRef(path[i - 1], path[i]) << '\n';
+            }
         }
     }
     std::cerr << "Vertices reached:  " << stats.vertices_reached << '\n';

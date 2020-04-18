@@ -4,8 +4,8 @@ LDLIBS=$(shell pkg-config libxml-2.0 --libs) -lsqlite3
 
 COMMON_HDRS=common.h
 
-READER_SRCS=graph-reader.cc metadata-reader.cc reader.cc
-READER_HDRS=graph-reader.h metadata-reader.h reader.h
+READER_SRCS=graph-reader.cc metadata-reader.cc reader.cc pipe-trick.cc
+READER_HDRS=graph-reader.h metadata-reader.h reader.h pipe-trick.h
 
 INDEX_SRCS=graph-writer.cc indexer.cc metadata-writer.cc parser.cc
 INDEX_HDRS=$(COMMON_HDRS) graph-writer.h metadata-writer.h parser.h
@@ -16,7 +16,7 @@ SEARCH_HDRS=$(READER_HDRS) searcher.h
 INSPECT_SRCS=$(READER_SRCS) inspect.cc
 INSPECT_HDRS=$(READER_HDRS)
 
-BINARIES=index inspect search xml-stats
+BINARIES=index inspect search xml-stats pipe-trick_test
 
 all: $(BINARIES)
 
@@ -31,6 +31,9 @@ inspect: $(INSPECT_SRCS) $(INSPECT_HDRS)
 
 search: $(SEARCH_SRCS) $(SEARCH_HDRS)
 	$(CXX) $(CXXFLAGS) -o $@ $(SEARCH_SRCS) $(LDFLAGS) $(LDLIBS)
+
+pipe-trick_test: pipe-trick.h pipe-trick.cc pipe-trick_test.cc
+	$(CXX) $(CXXFLAGS) -o $@ pipe-trick.cc pipe-trick_test.cc
 
 clean:
 	rm -f $(BINARIES)

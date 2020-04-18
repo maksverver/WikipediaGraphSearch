@@ -9,8 +9,10 @@ constexpr const char *get_page_by_id_sql = "SELECT page_id, title FROM pages WHE
 constexpr const char *get_page_by_title_sql = "SELECT page_id, title FROM pages WHERE title = ?";
 constexpr const char *get_link_sql = "SELECT from_page_id, to_page_id, title FROM links WHERE from_page_id = ? AND to_page_id = ?";
 
-std::string ColumnTextAsString(sqlite3_stmt *stmt, int column) {
-    return std::string((const char*) sqlite3_column_text(stmt, column), sqlite3_column_bytes(stmt, column));
+std::optional<std::string> ColumnTextAsString(sqlite3_stmt *stmt, int column) {
+    const char *text = (const char*) sqlite3_column_text(stmt, column);
+    if (text == nullptr) return std::nullopt;
+    return std::string(text, sqlite3_column_bytes(stmt, column));
 }
 
 }  // namespace
@@ -33,7 +35,7 @@ std::optional<MetadataReader::Page> MetadataReader::GetPage(sqlite3_stmt *stmt) 
     if (status == SQLITE_ROW) {
         result = Page{
             .id = (index_t) sqlite3_column_int64(stmt, 0),
-            .title = ColumnTextAsString(stmt, 1),
+            .title = ColumnTextAsString(stmt, 1).value(),
         };
         assert(sqlite3_step(stmt) == SQLITE_DONE);
     } else if (status != SQLITE_DONE) {
