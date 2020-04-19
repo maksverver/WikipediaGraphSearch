@@ -22,6 +22,12 @@ public:
     // Returns a reference to the open MetadataReader.
     MetadataReader &Metadata() { return *metadata; }
 
+    // Returns a random page id.
+    //
+    // To keep things interesting, this tries to find a page with at least 1
+    // incoming link and 1 outgoing link.
+    index_t RandomPageId();
+
     // Parses a page CLI argument and converts it to a valid page id,
     // or prints an error and returns 0.
     //

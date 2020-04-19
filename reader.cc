@@ -64,13 +64,29 @@ Reader::Reader(std::unique_ptr<GraphReader> graph, std::unique_ptr<MetadataReade
         : graph(std::move(graph)), metadata(std::move(metadata)) {
 }
 
-index_t Reader::ParsePageArgument(const char *arg) {
+index_t Reader::RandomPageId() {
     index_t size = graph->Size();
     if (size < 2) {
         std::cerr << "Graph is empty!\n";
         return 0;
     }
+    // To keep things interesting, we only select pages with both one incoming
+    // and one outgoing link. In particular, most redirect pages have no incoming
+    // links, and so they cannot be the destination of a shortest path.
+    //
+    // Note: we make only 20 attempts to find a suitable page, to keep an upper
+    // bound on the time taken by this function.
+    index_t result = 0;
+    for (int attempt = 0; attempt < 20; ++attempt) {
+        result = std::uniform_int_distribution<index_t>(1, size - 1)(Rng());
+        if (auto edges = graph->ForwardEdges(result); edges.begin() == edges.end()) continue;
+        if (auto edges = graph->BackwardEdges(result); edges.begin() == edges.end()) continue;
+        break;
+    }
+    return result;
+}
 
+index_t Reader::ParsePageArgument(const char *arg) {
     if (arg == nullptr || !*arg) {
         std::cerr << "Invalid page reference: empty string!\n";
         return 0;
@@ -94,8 +110,7 @@ index_t Reader::ParsePageArgument(const char *arg) {
 
     // Random page: "?"
     if (arg[0] == '?' && arg[1] == '\0') {
-        // Requires size > 1, which we verified at the top of the function.
-        return std::uniform_int_distribution<index_t>(1, size - 1)(Rng());
+        return RandomPageId();
     }
 
     // Lookup page by title.
