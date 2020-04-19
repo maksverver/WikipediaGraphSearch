@@ -6,11 +6,6 @@
 #include <chrono>
 #include <vector>
 
-// Finds a shortest path from `start` to `finish` using bidirectional
-// breadth-first search.
-//
-// Returns the path as vector indices, including start and finish, or an
-// empty vector if no path exists.
 std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, index_t finish, SearchStats *stats) {
     if (start == finish) {
         if (stats) *stats = SearchStats{.vertices_reached = 1};
