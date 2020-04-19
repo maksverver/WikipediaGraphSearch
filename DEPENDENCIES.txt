@@ -1,0 +1,10 @@
+Tools:
+
+  - GNU Make
+  - A recent C++ compiler
+
+Libraries:
+
+  - sqlite3 (all tools)
+  - libxml2 (indexer, xml-stats)
+  - webtoolkit (websearch)
