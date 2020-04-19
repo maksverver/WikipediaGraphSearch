@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <iostream>
+#include <mutex>
 
 namespace {
 
@@ -20,6 +21,7 @@ std::optional<std::string> ColumnTextAsString(sqlite3_stmt *stmt, int column) {
 MetadataReader::MetadataReader(sqlite3 *db) : db(db) {}
 
 MetadataReader::~MetadataReader() {
+    // No need to lock the mutex, because destructors should never be called concurrently.
     // Note: sqlite3_finalize is safe to call with a NULL argument.
     sqlite3_finalize(get_page_by_id_stmt);
     sqlite3_finalize(get_page_by_title_stmt);
@@ -29,6 +31,7 @@ MetadataReader::~MetadataReader() {
     }
 }
 
+// Caller must lock `mutex`!
 std::optional<MetadataReader::Page> MetadataReader::GetPage(sqlite3_stmt *stmt) {
     std::optional<MetadataReader::Page> result;
     int status = sqlite3_step(stmt);
@@ -45,6 +48,7 @@ std::optional<MetadataReader::Page> MetadataReader::GetPage(sqlite3_stmt *stmt) 
 }
 
 std::optional<MetadataReader::Page> MetadataReader::GetPageById(index_t id) {
+    std::scoped_lock mutex_lock(mutex);
     sqlite3_stmt *stmt = get_page_by_id_stmt;
     sqlite3_reset(stmt);
     sqlite3_bind_int64(stmt, 1, id);
@@ -54,6 +58,7 @@ std::optional<MetadataReader::Page> MetadataReader::GetPageById(index_t id) {
 }
 
 std::optional<MetadataReader::Page> MetadataReader::GetPageByTitle(const std::string &title) {
+    std::scoped_lock mutex_lock(mutex);
     sqlite3_stmt *stmt = get_page_by_title_stmt;
     sqlite3_reset(stmt);
     sqlite3_bind_text(stmt, 1, title.data(), title.size(), nullptr);
@@ -63,6 +68,7 @@ std::optional<MetadataReader::Page> MetadataReader::GetPageByTitle(const std::st
 }
 
 std::optional<MetadataReader::Link> MetadataReader::GetLink(index_t from_page_id, index_t to_page_id) {
+    std::scoped_lock mutex_lock(mutex);
     sqlite3_stmt *stmt = get_link_stmt;
     sqlite3_reset(stmt);
     sqlite3_bind_int64(stmt, 1, from_page_id);

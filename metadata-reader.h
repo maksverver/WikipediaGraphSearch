@@ -6,10 +6,11 @@
 #include <sqlite3.h>
 
 #include <optional>
-#include <string>
 #include <memory>
+#include <mutex>
+#include <string>
 
-// Important: due to the reuse of prepared statements, this class is NOT thread-safe!
+// Accessor for the graph metadata database. This class is thread-safe.
 class MetadataReader {
 public:
     static std::unique_ptr<MetadataReader> Open(const char *filename);
@@ -38,6 +39,7 @@ private:
     bool Prepare(sqlite3_stmt **stmt, const char *sql);
     std::optional<Page> GetPage(sqlite3_stmt *stmt);
 
+    std::mutex mutex;
     sqlite3 *const db;
     sqlite3_stmt *get_page_by_id_stmt = nullptr;
     sqlite3_stmt *get_page_by_title_stmt = nullptr;
