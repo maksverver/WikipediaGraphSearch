@@ -128,6 +128,8 @@ ${path})"));
 <b>${edges-expanded}</b> edges expanded.</p>)"));
     statsTemplate->hide();
 
+    root()->addWidget(std::make_unique<Wt::WText>(R"(<p>Source code: <a href="https://github.com/maksverver/WikipediaGraphSearch" target="_blank">https://github.com/maksverver/WikipediaGraphSearch</a>.</p>)"));
+
     RandomizeStart();
     RandomizeFinish();
 }
