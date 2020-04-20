@@ -16,6 +16,16 @@
 
 namespace {
 
+const char *GetAttr(const char* const* attrs, const char *key) {
+    while (*attrs != nullptr) {
+        if (strcmp(attrs[0], key) == 0) {
+            return attrs[1];
+        }
+        attrs += 2;
+    }
+    return nullptr;
+}
+
 class Parser {
 public:
     Parser(ParserCallback &callback) : callback(callback) {};
@@ -26,6 +36,10 @@ public:
 
         if (path == "/mediawiki/page") {
             BeginPage();
+        } else if (path == "/mediawiki/page/redirect") {
+            if (const char *title = GetAttr(attrs, "title"); title != nullptr) {
+                page_redirect = title;
+            }
         }
     }
 
@@ -54,10 +68,11 @@ public:
     void BeginPage() {
         page_title.clear();
         page_text.clear();
+        page_redirect.clear();
     }
 
     void EndPage() {
-        callback.HandlePage(page_title, page_text);
+        callback.HandlePage(page_title, page_text, page_redirect);
     }
 
 private:
@@ -65,6 +80,7 @@ private:
     std::string path;
     std::string page_title;
     std::string page_text;
+    std::string page_redirect;
 };
 
 

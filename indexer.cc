@@ -12,13 +12,45 @@
 #include <iostream>
 #include <map>
 #include <optional>
-#include <set>
 #include <string>
+#include <string_view>
 #include <sstream>
+#include <unordered_set>
 #include <unordered_map>
 #include <vector>
 
 namespace {
+
+// If true, the indexer excludes all redirect pages.
+const bool exclude_redirects = true;
+
+// Set of namespace prefixes to exclude. For example, pages with a title of
+// "Category:Foo" would be excluded by this. The list here is derived from the
+// namespaces for the English Wikipedia, defined at:
+// https://en.wikipedia.org/wiki/Wikipedia:Namespace
+const std::unordered_set<std::string_view> exclude_namespaces = {
+                         "Talk",
+    "User",              "User talk",
+    "Wikipedia",         "Wikipedia talk",
+    "File",              "File talk",
+    "MediaWiki",         "MediaWiki talk",
+    "Template",          "Template talk",
+    "Help",              "Help talk",
+    "Category",          "Category talk",
+    "Portal",            "Portal talk",
+    "Draft",             "Draft talk",
+    "TimedText",         "TimedText talk",
+    "Module",            "Module talk",
+    "Book",              "Book talk",
+    "Education Program", "Education Program talk",
+    "Gadget",            "Gadget talk",
+    "Gadget definition", "Gadget definition talk",
+    "Special",
+    "Media",
+};
+
+// Log only 1 out of every 1000 messages about excluded pages.
+const int exclude_log_interval = 1000;
 
 std::vector<std::string> page_titles = {""};
 std::unordered_map<std::string, index_t> page_index = {{"", 0}};
@@ -26,6 +58,7 @@ std::unordered_map<std::string, index_t> page_index = {{"", 0}};
 std::vector<std::vector<index_t>> outlinks;
 std::vector<std::vector<index_t>> inlinks;
 
+int64_t excluded_pages = 0;
 int64_t total_links = 0;
 int64_t unique_valid_links = 0;
 
@@ -109,11 +142,33 @@ index_t GetPageIndex(const std::string &title) {
     return it != page_index.end() ? it->second : 0;
 }
 
+bool IncludePage(const std::string_view &title, const std::string_view &redirect) {
+    if (title.empty()) {
+        if (excluded_pages++ % exclude_log_interval == 0) {
+            std::cerr << "Excluding page with empty title!\n";
+        }
+        return false;
+    }
+    if (exclude_redirects && !redirect.empty()) {
+        if (excluded_pages++ % exclude_log_interval == 0) {
+            std::cerr << "Excluding redirect from [" << title << "] to [" << redirect << "]\n";
+        }
+        return false;
+    }
+    std::string_view::size_type i = title.find(':');
+    if (i != std::string_view::npos && exclude_namespaces.find(title.substr(0, i)) != exclude_namespaces.end()) {
+        if (excluded_pages++ % exclude_log_interval == 0) {
+            std::cerr << "Excluded page in namespace [" << title << "]\n";
+        }
+        return false;
+    }
+    return true;
+}
+
 struct ParsePageTitles : public ParserCallback {
-    virtual void HandlePage(const std::string &title, const std::string &text) {
-        if (title.empty()) {
-            std::cerr << "Ignoring page with empty title!\n";
-        } else if (page_index.find(title) == page_index.end()) {
+    virtual void HandlePage(const std::string &title, const std::string &text, const std::string &redirect) {
+        if (!IncludePage(title, redirect)) return;
+        if (page_index.find(title) != page_index.end()) {
             std::cerr << "Ignoring page with duplicate title: [" << title << "]\n";
         } else {
             index_t i = page_titles.size();
@@ -130,7 +185,8 @@ struct ParseLinks : public ParserCallback {
         outlinks = {{}};
     }
 
-    virtual void HandlePage(const std::string &title, const std::string &text) {
+    virtual void HandlePage(const std::string &title, const std::string &text, const std::string &redirect) {
+        if (!IncludePage(title, redirect)) return;
         index_t i = GetPageIndex(title);
         if (i < outlinks.size()) {
             std::cerr << "Ignoring page with duplicate title: [" << title << "]\n";
@@ -189,7 +245,8 @@ int main(int argc, char** argv) {
             std::cerr << "Failed to parse [" << pages_filename << "]\n";
             return EXIT_FAILURE;
         }
-        std::cout << "Total articles: " << page_titles.size() - 1 << '\n';
+        std::cout << "Included pages: " << page_titles.size() - 1 << '\n';
+        std::cout << "Excluded pages: " << excluded_pages << '\n';
     }
 
     {   // Pass 2: extract all outgoing links to existing articles.

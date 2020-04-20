@@ -5,7 +5,7 @@
 
 class ParserCallback {
 public:
-    virtual void HandlePage(const std::string &title, const std::string &text) = 0;
+    virtual void HandlePage(const std::string &title, const std::string &text, const std::string &redirect) = 0;
 };
 
 int ParseFile(const char *filename, ParserCallback &callback);
