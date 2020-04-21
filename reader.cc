@@ -65,7 +65,7 @@ Reader::Reader(std::unique_ptr<GraphReader> graph, std::unique_ptr<MetadataReade
 }
 
 index_t Reader::RandomPageId() {
-    index_t size = graph->Size();
+    index_t size = graph->VertexCount();
     if (size < 2) {
         std::cerr << "Graph is empty!\n";
         return 0;
@@ -101,7 +101,7 @@ index_t Reader::ParsePageArgument(const char *arg) {
            std::cerr << "Page id [" << arg << "] is malformed.\n";
            return 0;
         }
-        if (i < 1 || i >= graph->Size()) {
+        if (i < 1 || i >= graph->VertexCount()) {
            std::cerr << "Page id [" << arg << "] is out of range!\n";
            return 0;
         }

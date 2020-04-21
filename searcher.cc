@@ -12,7 +12,7 @@ std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, i
         return {start};
     }
 
-    const index_t size = graph.Size();
+    const index_t size = graph.VertexCount();
     assert(~size > size);
 
     // Collect some stats.

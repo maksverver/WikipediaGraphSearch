@@ -8,10 +8,10 @@ XMLLIBS=$(shell pkg-config libxml-2.0 --libs)
 COMMON_HDRS=common.h
 
 READER_SRCS=graph-reader.cc metadata-reader.cc reader.cc pipe-trick.cc
-READER_HDRS=graph-reader.h metadata-reader.h reader.h pipe-trick.h
+READER_HDRS=graph-header.h graph-reader.h metadata-reader.h reader.h pipe-trick.h
 
 INDEX_SRCS=graph-writer.cc indexer.cc metadata-writer.cc parser.cc
-INDEX_HDRS=$(COMMON_HDRS) graph-writer.h metadata-writer.h parser.h
+INDEX_HDRS=$(COMMON_HDRS) graph-header.h graph-writer.h metadata-writer.h parser.h
 
 INSPECT_SRCS=$(READER_SRCS) inspect.cc
 INSPECT_HDRS=$(READER_HDRS)

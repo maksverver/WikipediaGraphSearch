@@ -53,7 +53,11 @@ public:
     EdgeList BackwardEdges(index_t i) const { return EdgeListAt(backward_index[i]); }
 
     // Number of vertices, including 0. Valid vertex indices are between 1 and Size() (exclusive).
-    index_t Size() const { return size; }
+    index_t VertexCount() const { return vertex_count; }
+
+    // Number of edges (in one direction only; i.e. the forward and backward edges
+    // combined are twice this number).
+    index_t EdgeCount() const { return edge_count; }
 
 private:
     GraphReader(uint32_t *data, size_t data_len);
@@ -63,7 +67,8 @@ private:
     const size_t data_len;
     const uint32_t *const forward_index;
     const uint32_t *const backward_index;
-    const uint32_t size;
+    const uint32_t vertex_count;
+    const uint32_t edge_count;
 };
 
 #endif  // ndef GRAPH_READER_H_INCLUDED

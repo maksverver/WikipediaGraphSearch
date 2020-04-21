@@ -116,9 +116,10 @@ ${path})"));
 
     auto statsHeaderTemplate = std::make_unique<Wt::WTemplate>(R"(
 <h3>Stats for nerds</h3>
-<p>Serving <code>${filename}</code>, which contains ${size} pages.</p>)");
+<p>Serving <code>${filename}</code>, which contains ${page-count} pages and ${link-count} links.</p>)");
     statsHeaderTemplate->bindString("filename", graph_filename, Wt::TextFormat::Plain);
-    statsHeaderTemplate->bindString("size", FormatNumber(reader.Graph().Size()), Wt::TextFormat::Plain);
+    statsHeaderTemplate->bindString("page-count", FormatNumber(reader.Graph().VertexCount()), Wt::TextFormat::Plain);
+    statsHeaderTemplate->bindString("link-count", FormatNumber(reader.Graph().EdgeCount()), Wt::TextFormat::Plain);
     root()->addWidget(std::move(statsHeaderTemplate));
 
     statsTemplate = root()->addWidget(std::make_unique<Wt::WTemplate>(R"(
