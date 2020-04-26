@@ -57,7 +57,8 @@ std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, i
 
     std::vector<index_t> path;
     while (!forward_fringe.empty() && !backward_fringe.empty()) {
-        {   // Expand forward fringe.
+        if (forward_fringe.size() <= backward_fringe.size()) {
+            // Expand forward fringe.
             std::vector<index_t> new_fringe;
             for (index_t i : forward_fringe) {
                 ++vertices_expanded;
@@ -76,8 +77,8 @@ std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, i
                 }
             }
             forward_fringe.swap(new_fringe);
-        }
-        {   // Expand backward fringe.
+        } else {
+            // Expand backward fringe.
             std::vector<index_t> new_fringe;
             for (index_t j : backward_fringe) {
                 ++vertices_expanded;
