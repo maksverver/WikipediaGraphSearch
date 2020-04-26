@@ -8,47 +8,50 @@
 
 namespace {
 
-class StatsCollector {
+class DummyStatsCollector {
 public:
-    StatsCollector(SearchStats *stats) : stats(stats) {
-        if (stats != nullptr) {
-            start_time = std::chrono::steady_clock::now();
-        }
-    }
+    void VertexReached() {}
+    void VertexExpanded() {}
+    void EdgeExpanded() {}
+};
 
-    ~StatsCollector() {
-        if (stats != nullptr) {
-            auto duration = std::chrono::steady_clock::now() - start_time;
-            *stats = {
-                .vertices_reached = vertices_reached,
-                .vertices_expanded = vertices_expanded,
-                .edges_expanded = edges_expanded,
-                .time_taken_ms = duration / std::chrono::milliseconds(1),
-            };
-        }
+class RealStatsCollector {
+public:
+    RealStatsCollector(SearchStats &stats)
+            : stats(stats), start_time(std::chrono::steady_clock::now()) {}
+
+    ~RealStatsCollector() {
+        auto duration = std::chrono::steady_clock::now() - start_time;
+        stats = {
+            .vertices_reached = vertices_reached,
+            .vertices_expanded = vertices_expanded,
+            .edges_expanded = edges_expanded,
+            .time_taken_ms = duration / std::chrono::milliseconds(1),
+        };
     }
 
     void VertexReached() { ++vertices_reached; }
     void VertexExpanded() { ++vertices_expanded; }
     void EdgeExpanded() { ++edges_expanded; }
 
+    // Not copyable or assignable.
+    RealStatsCollector(const RealStatsCollector&) = delete;
+    RealStatsCollector &operator=(const RealStatsCollector&) = delete;
+
 private:
-    SearchStats *stats;
+    SearchStats &stats;
     int64_t vertices_reached = 0;
     int64_t vertices_expanded = 0;
     int64_t edges_expanded = 0;
     std::chrono::time_point<std::chrono::steady_clock> start_time;
 };
 
-} // namespace
-
-std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, index_t finish, SearchStats *stats) {
+template<class StatsCollectorT>
+std::vector<index_t> FindShortestPathImpl(const GraphReader &graph, index_t start, index_t finish, StatsCollectorT stats_collector) {
     const index_t size = graph.VertexCount();
     assert(~size > size);
     assert(start < size);
     assert(finish < size);
-
-    StatsCollector stats_collector(stats);
 
     if (start == finish) {
         stats_collector.VertexReached();
@@ -131,4 +134,12 @@ std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, i
         }
     }
     return {};  // no path found!
+}
+
+} // namespace
+
+std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, index_t finish, SearchStats *stats) {
+    return stats == nullptr ?
+            FindShortestPathImpl(graph, start, finish, DummyStatsCollector()) :
+            FindShortestPathImpl(graph, start, finish, RealStatsCollector(*stats));
 }
