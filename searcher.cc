@@ -6,20 +6,54 @@
 #include <chrono>
 #include <vector>
 
-std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, index_t finish, SearchStats *stats) {
-    if (start == finish) {
-        if (stats) *stats = SearchStats{.vertices_reached = 1};
-        return {start};
+namespace {
+
+class StatsCollector {
+public:
+    StatsCollector(SearchStats *stats) : stats(stats) {
+        if (stats != nullptr) {
+            start_time = std::chrono::steady_clock::now();
+        }
     }
 
-    const index_t size = graph.VertexCount();
-    assert(~size > size);
+    ~StatsCollector() {
+        if (stats != nullptr) {
+            auto duration = std::chrono::steady_clock::now() - start_time;
+            *stats = {
+                .vertices_reached = vertices_reached,
+                .vertices_expanded = vertices_expanded,
+                .edges_expanded = edges_expanded,
+                .time_taken_ms = duration / std::chrono::milliseconds(1),
+            };
+        }
+    }
 
-    // Collect some stats.
-    int64_t vertices_reached = 2;
+    void VertexReached() { ++vertices_reached; }
+    void VertexExpanded() { ++vertices_expanded; }
+    void EdgeExpanded() { ++edges_expanded; }
+
+private:
+    SearchStats *stats;
+    int64_t vertices_reached = 0;
     int64_t vertices_expanded = 0;
     int64_t edges_expanded = 0;
-    auto start_time = std::chrono::steady_clock::now();
+    std::chrono::time_point<std::chrono::steady_clock> start_time;
+};
+
+} // namespace
+
+std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, index_t finish, SearchStats *stats) {
+    const index_t size = graph.VertexCount();
+    assert(~size > size);
+    assert(start < size);
+    assert(finish < size);
+
+    StatsCollector stats_collector(stats);
+
+    if (start == finish) {
+        stats_collector.VertexReached();
+        return {start};
+    }
 
     // For each vertex, visited[v] can be:
     //
@@ -53,24 +87,22 @@ std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, i
     visited[finish] = ~finish;
     forward_fringe.push_back(start);
     backward_fringe.push_back(finish);
-    vertices_reached += 2;
-
-    std::vector<index_t> path;
+    stats_collector.VertexReached();
+    stats_collector.VertexReached();
     while (!forward_fringe.empty() && !backward_fringe.empty()) {
         if (forward_fringe.size() <= backward_fringe.size()) {
             // Expand forward fringe.
             std::vector<index_t> new_fringe;
             for (index_t i : forward_fringe) {
-                ++vertices_expanded;
+                stats_collector.VertexExpanded();
                 for (index_t j : graph.ForwardEdges(i)) {
-                    ++edges_expanded;
+                    stats_collector.EdgeExpanded();
                     if (visited[j] == 0) {
-                        ++vertices_reached;
+                        stats_collector.VertexReached();
                         visited[j] = i;
                         new_fringe.push_back(j);
                     } else if (~visited[j] < size) {
-                        path = ReconstructPath(i, j);
-                        goto done;
+                        return ReconstructPath(i, j);  // path found!
                     } else {
                         assert(visited[j] < size);
                     }
@@ -81,16 +113,15 @@ std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, i
             // Expand backward fringe.
             std::vector<index_t> new_fringe;
             for (index_t j : backward_fringe) {
-                ++vertices_expanded;
+                stats_collector.VertexExpanded();
                 for (index_t i : graph.BackwardEdges(j)) {
-                    ++edges_expanded;
+                    stats_collector.EdgeExpanded();
                     if (visited[i] == 0) {
-                        ++vertices_reached;
+                        stats_collector.VertexReached();
                         visited[i] = ~j;
                         new_fringe.push_back(i);
                     } else if (visited[i] < size) {
-                        path = ReconstructPath(i, j);
-                        goto done;
+                        return ReconstructPath(i, j);  // path found!
                     } else {
                         assert(~visited[i] < size);
                     }
@@ -99,16 +130,5 @@ std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, i
             backward_fringe.swap(new_fringe);
         }
     }
-done:
-    auto duration = std::chrono::steady_clock::now() - start_time;
-
-    if (stats) {
-        *stats = {
-            .vertices_reached = vertices_reached,
-            .vertices_expanded = vertices_expanded,
-            .edges_expanded = edges_expanded,
-            .time_taken_ms = duration / std::chrono::milliseconds(1),
-        };
-    }
-    return path;
+    return {};  // no path found!
 }
