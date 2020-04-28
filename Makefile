@@ -1,6 +1,5 @@
-CXXFLAGS=-std=c++17 -Wall -O3
-LDFLAGS=-pthread
-LDLIBS=-lsqlite3
+COMPILE_FLAGS=$(CXXFLAGS) -std=c++17 -Wall -O3
+LINK_FLAGS=$(LDFLAGS) -lpthread $(LDLIBS) -lsqlite3
 
 XMLFLAGS=$(shell pkg-config libxml-2.0 --cflags)
 XMLLIBS=$(shell pkg-config libxml-2.0 --libs)
@@ -27,22 +26,22 @@ BINARIES=index inspect pipe-trick_test search websearch xml-stats
 all: $(BINARIES)
 
 xml-stats: xml-stats.cc
-	$(CXX) $(CXXFLAGS) $(XMLFLAGS) -o $@ xml-stats.cc $(LDFLAGS) $(LDLIBS) $(XMLLIBS)
+	$(CXX) $(COMPILE_FLAGS) $(XMLFLAGS) -o $@ xml-stats.cc $(LINK_FLAGS) $(XMLLIBS)
 
 index: $(INDEX_SRCS) $(INDEX_HDRS)
-	$(CXX) $(CXXFLAGS) $(XMLFLAGS) -o $@ $(INDEX_SRCS) $(LDFLAGS) $(LDLIBS) $(XMLLIBS)
+	$(CXX) $(COMPILE_FLAGS) $(XMLFLAGS) -o $@ $(INDEX_SRCS) $(LINK_FLAGS) $(XMLLIBS)
 
 inspect: $(INSPECT_SRCS) $(INSPECT_HDRS)
-	$(CXX) $(CXXFLAGS) -o $@ $(INSPECT_SRCS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(COMPILE_FLAGS) -o $@ $(INSPECT_SRCS) $(LINK_FLAGS)
 
 search: $(SEARCH_SRCS) $(SEARCH_HDRS)
-	$(CXX) $(CXXFLAGS) -o $@ $(SEARCH_SRCS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(COMPILE_FLAGS) -o $@ $(SEARCH_SRCS) $(LINK_FLAGS)
 
 pipe-trick_test: pipe-trick.h pipe-trick.cc pipe-trick_test.cc
-	$(CXX) $(CXXFLAGS) -o $@ pipe-trick.cc pipe-trick_test.cc $(LDFLAGS) $(LDLIBS)
+	$(CXX) $(COMPILE_FLAGS) -o $@ pipe-trick.cc pipe-trick_test.cc $(LINK_FLAGS)
 
 websearch: $(WEBSEARCH_SRCS) $(WEBSEARCH_HDRS)
-	$(CXX) $(CXXFLAGS) -o $@ $(WEBSEARCH_SRCS) $(LDFLAGS) $(LDLIBS) -lwthttp -lwt
+	$(CXX) $(COMPILE_FLAGS) -o $@ $(WEBSEARCH_SRCS) $(LINK_FLAGS) -lwthttp -lwt
 
 test: pipe-trick_test
 	./pipe-trick_test
