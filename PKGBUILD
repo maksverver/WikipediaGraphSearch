@@ -1,10 +1,10 @@
 pkgname=wikipath
 pkgver=0.1
-pkgrel=1
+pkgrel=2
 pkgdesc="Wikipedia shortest path search tool"
 arch=('x86_64')
 url="https://github.com/maksverver/WikipediaGraphSearch"
-depends=('sqlite' 'libxml2' 'wt=4.3.1')
+depends=('sqlite' 'libxml2' 'wt=4.5.0')
 
 build() {
     cd "${startdir}"
