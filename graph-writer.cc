@@ -36,7 +36,7 @@ bool WriteInt(FILE *fp, int64_t i) {
 
 bool WriteEdgeIndex(FILE *fp, int64_t offset, const std::vector<std::vector<index_t>> &edgelist) {
     assert(offset > 0);
-    for (const std::vector<index_t> adj : edgelist) {
+    for (const auto &adj : edgelist) {
         if (adj.empty()) {
             if (!WriteInt(fp, 0u)) return false;
         } else {
@@ -48,7 +48,7 @@ bool WriteEdgeIndex(FILE *fp, int64_t offset, const std::vector<std::vector<inde
 }
 
 bool WriteEdgeList(FILE *fp, const std::vector<std::vector<index_t>> &edgelist) {
-    for (const std::vector<index_t> adj : edgelist) {
+    for (const auto &adj : edgelist) {
         if (!adj.empty()) {
             for (index_t i : adj) {
                 assert(i > 0);
