@@ -4,7 +4,7 @@ pkgrel=2
 pkgdesc="Wikipedia shortest path search tool"
 arch=('x86_64')
 url="https://github.com/maksverver/WikipediaGraphSearch"
-depends=('sqlite' 'libxml2' 'wt=4.5.0')
+depends=('sqlite' 'libxml2' 'wt=4.6.1')
 
 build() {
     cd "${startdir}"
