@@ -3,9 +3,8 @@ Description=Shortest path finder for a Wikipedia graph
 After=network.target
 
 [Service]
-User=nobody
-Group=nobody
 ExecStart=/usr/lib/wikipath/websearch.sh
+DynamicUser=yes
 
 [Install]
 WantedBy=multi-user.target
