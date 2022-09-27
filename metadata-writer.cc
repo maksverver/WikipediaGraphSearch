@@ -23,9 +23,8 @@ constexpr const char *insert_link_sql = "INSERT INTO links(from_page_id, to_page
 MetadataWriter::MetadataWriter(sqlite3 *db) : db(db) {}
 
 MetadataWriter::~MetadataWriter() {
-    if (!Execute("END TRANSACTION")) {
-        std::cerr << "Failed to end transaction! " << sqlite3_errmsg(db) << std::endl;
-    }
+    Execute("END TRANSACTION");
+    Execute("VACUUM");
     // Note: sqlite3_finalize is safe to call with a NULL argument.
     sqlite3_finalize(insert_page_stmt);
     sqlite3_finalize(insert_link_stmt);
@@ -62,15 +61,10 @@ bool MetadataWriter::InsertLink(index_t from_page_id, index_t to_page_id, const 
 }
 
 bool MetadataWriter::Execute(const char *sql) {
-    char *error = nullptr;
-    int status = sqlite3_exec(db, sql, nullptr, nullptr, &error);
-    if (error != nullptr) {
-        std::cerr << "Failed to create schema: " << error << std::endl;
-        sqlite3_free(error);
-        return false;
-    }
+    int status = sqlite3_exec(db, sql, nullptr, nullptr, nullptr);
     if (status != SQLITE_OK) {
-        std::cerr << "Failed to execute SQL: " << sqlite3_errmsg(db) << std::endl;
+        std::cerr << "Failed to execute SQL query " << sql << ": "
+                << sqlite3_errmsg(db) << std::endl;
         return false;
     }
     return true;
