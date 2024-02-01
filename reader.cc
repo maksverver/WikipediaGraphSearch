@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <random>
 
@@ -101,7 +102,7 @@ index_t Reader::ParsePageArgument(const char *arg) {
            std::cerr << "Page id [" << arg << "] is malformed.\n";
            return 0;
         }
-        if (i < 1 || i >= graph->VertexCount()) {
+        if (!IsValidPageId(i)) {
            std::cerr << "Page id [" << arg << "] is out of range!\n";
            return 0;
         }

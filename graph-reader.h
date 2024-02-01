@@ -27,8 +27,8 @@ public:
         const uint32_t *p;
     };
 
-    Iterator begin() { return Iterator(p); }
-    Iterator end() { return Iterator(); }
+    Iterator begin() const { return Iterator(p); }
+    Iterator end() const { return Iterator(); }
 
 private:
     friend class GraphReader;

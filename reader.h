@@ -42,7 +42,8 @@ public:
     // Returns a page reference of the form "#123 (Title)".
     std::string PageRef(index_t id);
 
-    // Returns the text how the link to `to_page_id` is displayed on `from_page_id`.
+    // Returns the text how the link to `to_page_id` is displayed on `from_page_id`,
+    // or the string "unknown" if the link is not found.
     std::string LinkText(index_t from_page_id, index_t to_page_id);
 
     // Returns a reference to a target page of the form "#123 (ToTitle)", or
@@ -54,6 +55,10 @@ public:
     // "123 (FromTitle; displayed as Text)" means the origin page with title
     // "FromTitle", has a link with text "Text" to the target page.
     std::string BackwardLinkRef(index_t from_page_id, index_t to_page_id);
+
+    bool IsValidPageId(index_t id) const {
+        return 0 < id && id < graph->VertexCount();
+    }
 
 private:
     Reader(std::unique_ptr<GraphReader> graph, std::unique_ptr<MetadataReader> metadata);
