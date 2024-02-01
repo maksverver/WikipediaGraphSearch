@@ -1,4 +1,4 @@
-#include "parser.h"
+#include "wikipath/parser.h"
 
 #include <libxml/parser.h>
 
@@ -14,6 +14,7 @@
 #include <sstream>
 #include <vector>
 
+namespace wikipath {
 namespace {
 
 const char *GetAttr(const char* const* attrs, const char *key) {
@@ -96,11 +97,11 @@ void characters(void *user_data, const xmlChar *ch, int	len) {
     ((Parser*) user_data)->Characters((const char*) ch, len);
 }
 
-xmlEntityPtr getEntity(void *user_data, const xmlChar *name) {
+xmlEntityPtr getEntity(void *, const xmlChar *name) {
     return xmlGetPredefinedEntity(name);
 }
 
-void error(void *user_data, const char *fmt, ...) {
+void error(void *, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     fprintf(stderr, "Error occurred while parsing XML!\n");
@@ -111,6 +112,8 @@ void error(void *user_data, const char *fmt, ...) {
 }  // namespace
 
 int ParseFile(const char *filename, ParserCallback &callback) {
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
     xmlSAXHandler sax_handler = {
         .getEntity = getEntity,
         .startElement = startElement,
@@ -120,6 +123,9 @@ int ParseFile(const char *filename, ParserCallback &callback) {
         .error = error,
         .fatalError = error,
     };
+    #pragma GCC diagnostic pop
     Parser parser(callback);
     return xmlSAXUserParseFile(&sax_handler, &parser, filename);
 }
+
+}  // namespace wikipath

@@ -1,7 +1,9 @@
-#ifndef PARSER_H_INCLUDED
-#define PARSER_H_INCLUDED
+#ifndef WIKIPATH_PARSER_H_INCLUDED
+#define WIKIPATH_PARSER_H_INCLUDED
 
 #include <string>
+
+namespace wikipath {
 
 class ParserCallback {
 public:
@@ -10,4 +12,6 @@ public:
 
 int ParseFile(const char *filename, ParserCallback &callback);
 
-#endif  // ndef PARSER_H_INCLUDED
+}  // namespace wikipath
+
+#endif  // ndef WIKIPATH_PARSER_H_INCLUDED

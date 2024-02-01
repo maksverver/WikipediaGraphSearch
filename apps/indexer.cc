@@ -1,9 +1,10 @@
-#include "common.h"
-#include "graph-writer.h"
-#include "metadata-writer.h"
-#include "parser.h"
+#include "wikipath/common.h"
+#include "wikipath/graph-writer.h"
+#include "wikipath/metadata-writer.h"
+#include "wikipath/parser.h"
 
 #include <assert.h>
+#include <cstdlib>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,6 +20,7 @@
 #include <unordered_map>
 #include <vector>
 
+namespace wikipath {
 namespace {
 
 // If true, the indexer excludes all redirect pages.
@@ -166,7 +168,7 @@ bool IncludePage(const std::string_view &title, const std::string_view &redirect
 }
 
 struct ParsePageTitles : public ParserCallback {
-    virtual void HandlePage(const std::string &title, const std::string &text, const std::string &redirect) {
+    virtual void HandlePage(const std::string &title, const std::string &, const std::string &redirect) {
         if (!IncludePage(title, redirect)) return;
         if (page_index.find(title) != page_index.end()) {
             std::cerr << "Ignoring page with duplicate title: [" << title << "]\n";
@@ -211,30 +213,15 @@ struct ParseLinks : public ParserCallback {
 
 }  // namespace
 
-int main(int argc, char** argv) {
-    if (argc != 2) {
-        std::cout << "Usage: " << argv[0] << " <pages-articles.xml>" << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    std::string pages_filename(argv[1]);
-    std::string base_filename = pages_filename;
-    base_filename = base_filename.substr(0, base_filename.rfind('.'));
-    std::string graph_filename = base_filename + ".graph";
-    std::string metadata_filename = base_filename + ".metadata";
-    if (std::filesystem::exists(graph_filename)) {
-        std::cerr << "Graph output file already exists [" << graph_filename << "]\n";
-        return EXIT_FAILURE;
-    }
-    if (std::filesystem::exists(metadata_filename)) {
-        std::cerr << "Metadata output file already exists [" << metadata_filename << "]\n";
-        return EXIT_FAILURE;
-    }
+bool RunIndexer(
+        const std::string &pages_filename,
+        const std::string &graph_filename,
+        const std::string &metadata_filename) {
 
     metadata_writer = MetadataWriter::Create(metadata_filename.c_str());
     if (metadata_writer == nullptr) {
         std::cerr << "Could not create metadata output file [" << metadata_filename << "]\n";
-        return EXIT_FAILURE;
+        return false;
     }
 
     // Process the XML input file.
@@ -243,7 +230,7 @@ int main(int argc, char** argv) {
         ParsePageTitles extract_page_titles;
         if (ParseFile(pages_filename.c_str(), extract_page_titles) != 0) {
             std::cerr << "Failed to parse [" << pages_filename << "]\n";
-            return EXIT_FAILURE;
+            return false;
         }
         std::cout << "Included pages: " << page_titles.size() - 1 << '\n';
         std::cout << "Excluded pages: " << excluded_pages << '\n';
@@ -253,7 +240,7 @@ int main(int argc, char** argv) {
         ParseLinks extract_links;
         if (ParseFile(pages_filename.c_str(), extract_links) != 0) {
             std::cerr << "Failed to parse [" << pages_filename << "]\n";
-            return EXIT_FAILURE;
+            return false;
         }
         std::cout << "Total links: " << total_links << '\n';
         std::cout << "Unique valid links: " << unique_valid_links << '\n';
@@ -278,6 +265,35 @@ int main(int argc, char** argv) {
 
     if (!WriteGraphOutput(graph_filename.c_str(), outlinks, inlinks)) {
         std::cerr << "Could not write graph output file [" << graph_filename << "]\n";
+        return false;
+    }
+
+    return true;
+}
+
+}  // namespace wikipath
+
+int main(int argc, char** argv) {
+    if (argc != 2) {
+        std::cout << "Usage: " << argv[0] << " <pages-articles.xml>" << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::string pages_filename(argv[1]);
+    std::string base_filename = pages_filename;
+    base_filename = base_filename.substr(0, base_filename.rfind('.'));
+    std::string graph_filename = base_filename + ".graph";
+    std::string metadata_filename = base_filename + ".metadata";
+    if (std::filesystem::exists(graph_filename)) {
+        std::cerr << "Graph output file already exists [" << graph_filename << "]\n";
+        return EXIT_FAILURE;
+    }
+    if (std::filesystem::exists(metadata_filename)) {
+        std::cerr << "Metadata output file already exists [" << metadata_filename << "]\n";
+        return EXIT_FAILURE;
+    }
+
+    if (!wikipath::RunIndexer(pages_filename, graph_filename, metadata_filename)) {
         return EXIT_FAILURE;
     }
 

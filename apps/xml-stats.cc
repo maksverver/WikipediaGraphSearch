@@ -14,7 +14,7 @@ namespace {
 std::map<std::string, int64_t> path_count;
 std::string path;
 
-void startElement(void *user_data, const xmlChar *name, const xmlChar **attrs) {
+void startElement(void *, const xmlChar *name, const xmlChar **) {
     path.append("/");
     path.append((char*) name);
     if (!path_count[path]++) {
@@ -22,7 +22,7 @@ void startElement(void *user_data, const xmlChar *name, const xmlChar **attrs) {
     }
 }
 
-void endElement(void *user_data, const xmlChar *name) {
+void endElement(void *, const xmlChar *name) {
     size_t n = strlen((char*) name);
     assert(
         path.size() > n &&
@@ -31,15 +31,15 @@ void endElement(void *user_data, const xmlChar *name) {
     path.erase(path.size() - n - 1);
 }
 
-void characters(void *user_data, const xmlChar *ch, int	len) {
+void characters(void *, const xmlChar *, int) {
 //    std::cout << '"' << std::string((char*) ch, len) << '"' << '\n';
 }
 
-xmlEntityPtr getEntity(void *user_data, const xmlChar *name) {
+xmlEntityPtr getEntity(void *, const xmlChar *name) {
     return xmlGetPredefinedEntity(name);
 }
 
-void error(void *user_data, const char *fmt, ...) {
+void error(void *, const char *fmt, ...) {
     va_list args;
     va_start(args, fmt);
     fprintf(stderr, "Error occurred while parsing XML!\n");
@@ -47,6 +47,8 @@ void error(void *user_data, const char *fmt, ...) {
     va_end(args);
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 xmlSAXHandler sax_handler {
     .getEntity = getEntity,
     .startElement = startElement,
@@ -56,6 +58,7 @@ xmlSAXHandler sax_handler {
     .error = error,
     .fatalError = error,
 };
+#pragma GCC diagnostic pop
 
 }  // namespace
 

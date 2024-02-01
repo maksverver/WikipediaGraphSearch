@@ -1,10 +1,13 @@
-#include "pipe-trick.h"
+#include "wikipath/pipe-trick.h"
 
-#include <ctype.h>
+#include <cctype>
+#include <string_view>
+
+namespace wikipath {
 
 // Note: this function doesn't try to handle corner cases correctly because
 // Wikipedia doesn't fully define them
-std::string_view ResolvePipeTrick(std::string_view s) { 
+std::string_view ResolvePipeTrick(std::string_view s) {
     // Remove prefix up to and including the first colon, plus the leading colon, if present.
     if (!s.empty()) {
         std::string_view::size_type colon_pos = s.find(':', 1);
@@ -30,3 +33,5 @@ std::string_view ResolvePipeTrick(std::string_view s) {
 
     return s;
 }
+
+}  // namespace wikipath

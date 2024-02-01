@@ -1,11 +1,13 @@
-#ifndef READER_H_INCLUDED
-#define READER_H_INCLUDED
+#ifndef WIKIPATH_READER_H_INCLUDED
+#define WIKIPATH_READER_H_INCLUDED
 
 #include "common.h"
 #include "graph-reader.h"
 #include "metadata-reader.h"
 
 #include <string>
+
+namespace wikipath {
 
 // Wrapper around GraphReader and MetadataReader, for tools that need both.
 //
@@ -67,4 +69,6 @@ private:
     std::unique_ptr<MetadataReader> metadata;
 };
 
-#endif  // ndef READER_H_INCLUDED
+}  // namespace wikipath
+
+#endif  // ndef WIKIPATH_READER_H_INCLUDED

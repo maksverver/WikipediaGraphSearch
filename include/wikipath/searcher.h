@@ -1,10 +1,12 @@
-#ifndef SEARCHER_H_INCLUDED
-#define SEARCHER_H_INCLUDED
+#ifndef WIKIPATH_SEARCHER_H_INCLUDED
+#define WIKIPATH_SEARCHER_H_INCLUDED
 
 #include "common.h"
 #include "graph-reader.h"
 
 #include <vector>
+
+namespace wikipath {
 
 struct SearchStats {
     int64_t vertices_reached = 0;
@@ -22,4 +24,6 @@ struct SearchStats {
 // If `stats` is not null, statistics are written to *stats.
 std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, index_t finish, SearchStats *stats);
 
-#endif  // ndef SEARCHER_H_INCLUDED
+}  // namespace wikipath
+
+#endif  // ndef WIKIPATH_SEARCHER_H_INCLUDED

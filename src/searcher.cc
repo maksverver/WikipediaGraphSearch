@@ -1,4 +1,4 @@
-#include "searcher.h"
+#include "wikipath/searcher.h"
 
 #include <assert.h>
 
@@ -6,6 +6,7 @@
 #include <chrono>
 #include <vector>
 
+namespace wikipath {
 namespace {
 
 class DummyStatsCollector {
@@ -143,3 +144,5 @@ std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, i
             FindShortestPathImpl(graph, start, finish, DummyStatsCollector()) :
             FindShortestPathImpl(graph, start, finish, RealStatsCollector(*stats));
 }
+
+}  // namespace wikipath

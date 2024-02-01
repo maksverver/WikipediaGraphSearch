@@ -1,5 +1,5 @@
-#ifndef METADATA_WRITER_H_INCLUDED
-#define METADATA_WRITER_H_INCLUDED
+#ifndef WIKIPATH_METADATA_WRITER_H_INCLUDED
+#define WIKIPATH_METADATA_WRITER_H_INCLUDED
 
 #include "common.h"
 
@@ -8,6 +8,8 @@
 #include <optional>
 #include <string>
 #include <memory>
+
+namespace wikipath {
 
 class MetadataWriter {
 public:
@@ -30,4 +32,6 @@ private:
     sqlite3_stmt *insert_link_stmt = nullptr;
 };
 
-#endif  // ndef METADATA_WRITER_H_INCLUDED
+}  // namespace wikipath
+
+#endif  // ndef WIKIPATH_METADATA_WRITER_H_INCLUDED

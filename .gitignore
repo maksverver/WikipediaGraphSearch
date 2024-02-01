@@ -1,9 +1,3 @@
 *.xml
 *.graph
 *.metadata
-index
-inspect
-pipe-trick_test
-search
-websearch
-xml-stats

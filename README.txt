@@ -1,5 +1,16 @@
 Wikipedia shortest path search tool.
 
+
+BUILDING
+
+% cmake -B build
+% make -C build
+
+Binaries are written to build/apps/
+
+
+RUNNING
+
 To use the tool, first download a Wikipedia database dump from
 https://dumps.wikimedia.org/ (e.g. "enwiki-20240120-pages-articles.xml.bz2") and
 extract it (e.g. with "bunzip2 -k").
@@ -80,3 +91,11 @@ The websearch binary (which requires Wt, the web toolkit) runs the web frontend:
 ...
 
 Open http://localhost:8080/ in a web browser to use the tool.
+
+
+DEVELOPMENT
+
+To develop in Visual Studio code with clangd, generate
+build/compile_commands.json by running:
+
+% cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS

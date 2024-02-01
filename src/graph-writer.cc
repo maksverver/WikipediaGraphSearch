@@ -1,6 +1,6 @@
-#include "common.h"
+#include "wikipath/common.h"
 
-#include "graph-header.h"
+#include "wikipath/graph-header.h"
 
 #include <assert.h>
 #include <stdint.h>
@@ -9,6 +9,7 @@
 
 #include <vector>
 
+namespace wikipath {
 namespace {
 
 int64_t CountEdges(const std::vector<std::vector<index_t>> &edgelist) {
@@ -126,3 +127,5 @@ bool WriteGraphOutput(
     if (fclose(fp) != 0) success = false;
     return success;
 }
+
+}  // namespace wikipath

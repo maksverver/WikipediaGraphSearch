@@ -1,5 +1,6 @@
-#include "reader.h"
-#include "searcher.h"
+#include "wikipath/metadata-reader.h"
+#include "wikipath/reader.h"
+#include "wikipath/searcher.h"
 
 #include <Wt/WApplication.h>
 #include <Wt/WBreak.h>
@@ -17,6 +18,11 @@
 #include <memory>
 
 namespace {
+
+using wikipath::index_t;
+using wikipath::Reader;
+using wikipath::MetadataReader;
+using wikipath::SearchStats;
 
 std::string MakeWikiUrl(const std::string &title) {
     // I should probably do some escaping or whatever...

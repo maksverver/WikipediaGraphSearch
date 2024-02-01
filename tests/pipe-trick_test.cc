@@ -1,4 +1,4 @@
-#include "pipe-trick.h"
+#include "wikipath/pipe-trick.h"
 
 #include <iostream>
 #include <string_view>
@@ -30,7 +30,7 @@ constexpr const TestCase test_cases[] = {
 int main() {
     int successes = 0, failures = 0;
     for (auto [input, expected_output] : test_cases) {
-        std::string_view received_output = ResolvePipeTrick(input);
+        std::string_view received_output = wikipath::ResolvePipeTrick(input);
         if (received_output == expected_output) {
             ++successes;
         } else {

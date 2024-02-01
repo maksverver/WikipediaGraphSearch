@@ -1,9 +1,10 @@
-#include "metadata-reader.h"
+#include "wikipath/metadata-reader.h"
 
 #include <assert.h>
 #include <iostream>
 #include <mutex>
 
+namespace wikipath {
 namespace {
 
 constexpr const char *get_page_by_id_sql = "SELECT page_id, title FROM pages WHERE page_id = ?";
@@ -112,3 +113,5 @@ std::unique_ptr<MetadataReader> MetadataReader::Open(const char *filename) {
     if (!metadata_reader->Init()) return nullptr;
     return metadata_reader;
 }
+
+}  // namespace wikipath

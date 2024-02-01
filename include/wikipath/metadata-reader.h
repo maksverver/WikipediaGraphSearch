@@ -1,5 +1,5 @@
-#ifndef METADATA_READER_H_INCLUDED
-#define METADATA_READER_H_INCLUDED
+#ifndef WIKIPATH_METADATA_READER_H_INCLUDED
+#define WIKIPATH_METADATA_READER_H_INCLUDED
 
 #include "common.h"
 
@@ -9,6 +9,8 @@
 #include <memory>
 #include <mutex>
 #include <string>
+
+namespace wikipath {
 
 // Accessor for the graph metadata database. This class is thread-safe.
 class MetadataReader {
@@ -46,4 +48,6 @@ private:
     sqlite3_stmt *get_link_stmt = nullptr;
 };
 
-#endif  // ndef METADATA_READER_H_INCLUDED
+}  // namespace wikipath
+
+#endif  // ndef WIKIPATH_METADATA_READER_H_INCLUDED

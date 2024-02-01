@@ -1,11 +1,13 @@
-#ifndef GRAPH_READER_H_INCLUDED
-#define GRAPH_READER_H_INCLUDED
+#ifndef WIKIPATH_GRAPH_READER_H_INCLUDED
+#define WIKIPATH_GRAPH_READER_H_INCLUDED
 
 #include "common.h"
 
 #include <stdint.h>
 
 #include <memory>
+
+namespace wikipath {
 
 class EdgeList {
 public:
@@ -71,4 +73,6 @@ private:
     const uint32_t edge_count;
 };
 
-#endif  // ndef GRAPH_READER_H_INCLUDED
+}  // namespace wikipath
+
+#endif  // ndef WIKIPATH_GRAPH_READER_H_INCLUDED

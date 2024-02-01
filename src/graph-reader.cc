@@ -1,6 +1,6 @@
-#include "graph-reader.h"
+#include "wikipath/graph-reader.h"
 
-#include "graph-header.h"
+#include "wikipath/graph-header.h"
 
 #include <fcntl.h>
 #include <sys/mman.h>
@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+namespace wikipath {
 namespace {
 
 struct FdCloser {
@@ -47,3 +48,5 @@ std::unique_ptr<GraphReader> GraphReader::Open(const char *filename) {
 
     return std::unique_ptr<GraphReader>(new GraphReader((uint32_t*) data, data_len));
 }
+
+}  // namespace wikipath

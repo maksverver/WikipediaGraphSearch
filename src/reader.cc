@@ -1,6 +1,6 @@
-#include "reader.h"
+#include "wikipath/reader.h"
 
-#include "pipe-trick.h"
+#include "wikipath/pipe-trick.h"
 
 #include <assert.h>
 #include <string.h>
@@ -12,6 +12,7 @@
 #include <sstream>
 #include <random>
 
+namespace wikipath {
 namespace {
 
 std::mt19937 CreateRng() {
@@ -154,3 +155,5 @@ std::string Reader::BackwardLinkRef(index_t from_page_id, index_t to_page_id) {
     const std::string to_title = PageTitle(to_page_id);
     return LinkRef(from_page_id, from_title, to_title, LinkText(from_page_id, to_page_id));
 }
+
+}  // namespace wikipath

@@ -1,7 +1,9 @@
-#ifndef GRAPH_HEADER_H_INCLUDED
-#define GRAPH_HEADER_H_INCLUDED
+#ifndef WIKIPATH_GRAPH_HEADER_H_INCLUDED
+#define WIKIPATH_GRAPH_HEADER_H_INCLUDED
 
 #include <stdint.h>
+
+namespace wikipath {
 
 const uint32_t graph_header_magic_value = 0x57494b49u;  // WIKI
 
@@ -15,4 +17,6 @@ enum GraphHeaderFields {
     GRAPH_HEADER_FIELD_COUNT
 };
 
-#endif  // ndef GRAPH_HEADER_H_INCLUDED
+}  // namespace wikipath
+
+#endif  // ndef WIKIPATH_GRAPH_HEADER_H_INCLUDED

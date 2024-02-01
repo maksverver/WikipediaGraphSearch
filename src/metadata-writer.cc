@@ -1,7 +1,9 @@
-#include "metadata-writer.h"
+#include "wikipath/metadata-writer.h"
 
 #include <assert.h>
 #include <iostream>
+
+namespace wikipath {
 
 constexpr const char *schema[] = {
 R"(CREATE TABLE pages(
@@ -103,3 +105,5 @@ std::unique_ptr<MetadataWriter> MetadataWriter::Create(const char *filename) {
     if (!metadata_writer->Init()) return nullptr;
     return metadata_writer;
 }
+
+}  // namespace wikipath
