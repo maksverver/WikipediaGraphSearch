@@ -38,15 +38,15 @@ public:
     //   "?" -> selects a random page
     index_t ParsePageArgument(const char *arg);
 
-    // Returns the title of the page, or the string "untitled" if the page is not found.
+    // Returns the title of the page, or "untitled" if the page is not found.
     std::string PageTitle(index_t id);
 
     // Returns a page reference of the form "#123 (Title)".
     std::string PageRef(index_t id);
 
-    // Returns the text how the link to `to_page_id` is displayed on `from_page_id`,
-    // or the string "unknown" if the link is not found.
-    std::string LinkText(index_t from_page_id, index_t to_page_id);
+    // Returns the text how the link to `to_page_id` is displayed on
+    // `from_page_id`, or an empty optional if the link is not found.
+    std::optional<std::string> LinkText(index_t from_page_id, index_t to_page_id);
 
     // Returns a reference to a target page of the form "#123 (ToTitle)", or
     // "#123 (ToTitle; displayed as Text)" if the target page is linked from the

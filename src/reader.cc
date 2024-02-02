@@ -134,12 +134,12 @@ std::string Reader::PageRef(index_t id) {
     return oss.str();
 }
 
-std::string Reader::LinkText(index_t from_page_id, index_t to_page_id) {
+std::optional<std::string> Reader::LinkText(index_t from_page_id, index_t to_page_id) {
     std::optional<MetadataReader::Link> link = metadata->GetLink(from_page_id, to_page_id);
-    if (!link) return "unknown";
+    if (!link) return {};
     if (link->title && !link->title->empty()) return *link->title;   // [[Foo|Bar]] -> "Bar"
     std::optional<MetadataReader::Page> target_page = metadata->GetPageById(to_page_id);
-    if (!target_page) return "unknown";
+    if (!target_page) return {};
     if (!link->title) return target_page->title;  // [[Foo]] -> "Foo"
     assert(link->title->empty());
     return std::string(ResolvePipeTrick(target_page->title));  // [[cat:Foo (bar)]] -> "Foo"
@@ -147,13 +147,15 @@ std::string Reader::LinkText(index_t from_page_id, index_t to_page_id) {
 
 std::string Reader::ForwardLinkRef(index_t from_page_id, index_t to_page_id) {
     const std::string to_title = PageTitle(to_page_id);
-    return LinkRef(to_page_id, to_title, to_title, LinkText(from_page_id, to_page_id));
+    const std::string text = LinkText(from_page_id, to_page_id).value_or("unknown");
+    return LinkRef(to_page_id, to_title, to_title, text);
 }
 
 std::string Reader::BackwardLinkRef(index_t from_page_id, index_t to_page_id) {
     const std::string from_title = PageTitle(from_page_id);
     const std::string to_title = PageTitle(to_page_id);
-    return LinkRef(from_page_id, from_title, to_title, LinkText(from_page_id, to_page_id));
+    const std::string text = LinkText(from_page_id, to_page_id).value_or("unknown");
+    return LinkRef(from_page_id, from_title, to_title, text);
 }
 
 }  // namespace wikipath
