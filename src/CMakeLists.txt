@@ -45,4 +45,5 @@ if (pybind11_FOUND)
       searcher.cc
       WITH_SOABI)
   target_link_libraries(wikipath PRIVATE pybind11::headers reading)
+  set_target_properties(wikipath PROPERTIES CXX_VISIBILITY_PRESET hidden)
 endif ()
