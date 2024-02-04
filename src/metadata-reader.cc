@@ -33,7 +33,7 @@ MetadataReader::~MetadataReader() {
 }
 
 // Caller must lock `mutex`!
-std::optional<MetadataReader::Page> MetadataReader::GetPage(sqlite3_stmt *stmt) {
+std::optional<MetadataReader::Page> MetadataReader::GetPage(sqlite3_stmt *stmt) const {
     std::optional<MetadataReader::Page> result;
     int status = sqlite3_step(stmt);
     if (status == SQLITE_ROW) {
@@ -48,7 +48,7 @@ std::optional<MetadataReader::Page> MetadataReader::GetPage(sqlite3_stmt *stmt) 
     return result;
 }
 
-std::optional<MetadataReader::Page> MetadataReader::GetPageById(index_t id) {
+std::optional<MetadataReader::Page> MetadataReader::GetPageById(index_t id) const {
     std::scoped_lock mutex_lock(mutex);
     sqlite3_stmt *stmt = get_page_by_id_stmt;
     sqlite3_reset(stmt);
@@ -58,7 +58,7 @@ std::optional<MetadataReader::Page> MetadataReader::GetPageById(index_t id) {
     return result;
 }
 
-std::optional<MetadataReader::Page> MetadataReader::GetPageByTitle(const std::string &title) {
+std::optional<MetadataReader::Page> MetadataReader::GetPageByTitle(const std::string &title) const {
     std::scoped_lock mutex_lock(mutex);
     sqlite3_stmt *stmt = get_page_by_title_stmt;
     sqlite3_reset(stmt);
@@ -68,7 +68,7 @@ std::optional<MetadataReader::Page> MetadataReader::GetPageByTitle(const std::st
     return result;
 }
 
-std::optional<MetadataReader::Link> MetadataReader::GetLink(index_t from_page_id, index_t to_page_id) {
+std::optional<MetadataReader::Link> MetadataReader::GetLink(index_t from_page_id, index_t to_page_id) const {
     std::scoped_lock mutex_lock(mutex);
     sqlite3_stmt *stmt = get_link_stmt;
     sqlite3_reset(stmt);

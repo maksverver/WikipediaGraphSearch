@@ -19,16 +19,21 @@ public:
     static std::unique_ptr<Reader> Open(const char *graph_filename);
 
     // Returns a reference to the open GraphReader.
-    GraphReader &Graph() { return *graph; }
+    const GraphReader &Graph() const { return *graph; }
 
     // Returns a reference to the open MetadataReader.
-    MetadataReader &Metadata() { return *metadata; }
+    const MetadataReader &Metadata() const { return *metadata; }
+
+    // Returns whether `id` is a valid page id.
+    bool IsValidPageId(index_t id) const {
+        return 0 < id && id < graph->VertexCount();
+    }
 
     // Returns a random page id.
     //
     // To keep things interesting, this tries to find a page with at least 1
     // incoming link and 1 outgoing link.
-    index_t RandomPageId();
+    index_t RandomPageId() const;
 
     // Parses a page CLI argument and converts it to a valid page id,
     // or prints an error and returns 0.
@@ -36,31 +41,27 @@ public:
     //   Title -> resolves the page by title
     //   "#123" -> parges page index as a number
     //   "?" -> selects a random page
-    index_t ParsePageArgument(const char *arg);
+    index_t ParsePageArgument(const char *arg) const;
 
     // Returns the title of the page, or "untitled" if the page is not found.
-    std::string PageTitle(index_t id);
+    std::string PageTitle(index_t id) const;
 
     // Returns a page reference of the form "#123 (Title)".
-    std::string PageRef(index_t id);
+    std::string PageRef(index_t id) const;
 
     // Returns the text how the link to `to_page_id` is displayed on
     // `from_page_id`, or an empty optional if the link is not found.
-    std::optional<std::string> LinkText(index_t from_page_id, index_t to_page_id);
+    std::optional<std::string> LinkText(index_t from_page_id, index_t to_page_id) const;
 
     // Returns a reference to a target page of the form "#123 (ToTitle)", or
     // "#123 (ToTitle; displayed as Text)" if the target page is linked from the
     // source page with a link text different from the title of the target page.
-    std::string ForwardLinkRef(index_t from_page_id, index_t to_page_id);
+    std::string ForwardLinkRef(index_t from_page_id, index_t to_page_id) const;
 
     // Similar to ForwardLinkRef, but for backward links. Note that the form
     // "123 (FromTitle; displayed as Text)" means the origin page with title
     // "FromTitle", has a link with text "Text" to the target page.
-    std::string BackwardLinkRef(index_t from_page_id, index_t to_page_id);
-
-    bool IsValidPageId(index_t id) const {
-        return 0 < id && id < graph->VertexCount();
-    }
+    std::string BackwardLinkRef(index_t from_page_id, index_t to_page_id) const;
 
 private:
     Reader(std::unique_ptr<GraphReader> graph, std::unique_ptr<MetadataReader> metadata);

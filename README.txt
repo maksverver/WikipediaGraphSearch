@@ -98,4 +98,4 @@ DEVELOPMENT
 To develop in Visual Studio code with clangd, generate
 build/compile_commands.json by running:
 
-% cmake -B build -DCMAKE_EXPORT_COMPILE_COMMANDS
+% cmake -B build -D CMAKE_EXPORT_COMPILE_COMMANDS=1 -D CMAKE_BUILD_TYPE=Debug

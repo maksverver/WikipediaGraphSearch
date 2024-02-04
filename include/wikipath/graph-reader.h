@@ -13,12 +13,18 @@ class EdgeList {
 public:
     class Iterator {
     public:
+        using value_type = index_t;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const index_t*;
+        using reference = const index_t&;
+        using iterator_category = std::forward_iterator_tag;
+
         Iterator() : p(nullptr) {}
         Iterator(const Iterator&) = default;
         Iterator& operator=(const Iterator&) = default;
         Iterator& operator++() { ++p; return *this; }
         Iterator operator++(int) { return Iterator(p++); }
-        index_t operator*() const { return *p; }
+        value_type operator*() const { return *p; }
         bool operator==(const Iterator &it) const { return p == it.p || (AtEnd() && it.AtEnd()); }
         bool operator!=(const Iterator &it) const { return !(*this == it); }
 
