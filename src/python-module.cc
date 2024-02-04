@@ -135,7 +135,7 @@ PYBIND11_MODULE(wikipath, module) {
       .def(hash(py::self))
       .def("__repr__", [](const SearchStats &stats) {
         std::ostringstream oss;
-        oss << "SearchStats(vertices_reached=" << stats.vertices_reached
+        oss << "wikipath.SearchStats(vertices_reached=" << stats.vertices_reached
             << ", vertices_expanded=" << stats.vertices_expanded
             << ", edges_expanded=" << stats.edges_expanded
             << ", time_taken_ms=" << stats.time_taken_ms << ")";
@@ -168,7 +168,8 @@ PYBIND11_MODULE(wikipath, module) {
       .def(hash(py::self))
       .def("__repr__", [](const MetadataReader::Page &page) {
         std::ostringstream oss;
-        oss << "Page(id=" << page.id << ", title=" << QuotedString{page.title} << ")";
+        oss << "wikipath.MetadataReader.Page(id=" << page.id
+            << ", title=" << QuotedString{page.title} << ")";
         return oss.str();
       });
   ;
@@ -196,7 +197,7 @@ PYBIND11_MODULE(wikipath, module) {
       .def(hash(py::self))
       .def("__repr__", [](const MetadataReader::Link &link) {
         std::ostringstream oss;
-        oss << "Link(from_page_id=" << link.from_page_id
+        oss << "wikipath.MetadataReader.Link(from_page_id=" << link.from_page_id
             << ", to_page_id=" << link.to_page_id
             << ", title=";
         if (!link.title) oss << "None"; else oss << QuotedString(*link.title);
