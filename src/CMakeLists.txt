@@ -30,6 +30,21 @@ if (LIBXML2_FOUND)
   target_compile_options(parsing PUBLIC ${LIBXML2_CFLAGS_OTHER})
 endif ()
 
+# This library copies the list of sources from common/reading/searching above,
+# instead of depending on the common/reading/searching libraries, because the
+# shared library needs to be linked as position-independent code, which the
+# static libraries are not, by default, and changing that could affect
+# performance.
+add_library(wikipath-reader-c-api SHARED
+    reader-c-api.cc
+    pipe-trick.cc
+    graph-reader.cc
+    metadata-reader.cc
+    reader.cc
+    searcher.cc)
+set_target_properties(wikipath-reader-c-api PROPERTIES CXX_VISIBILITY_PRESET hidden)
+target_link_libraries(wikipath-reader-c-api PRIVATE SQLite::SQLite3)
+
 if (pybind11_FOUND)
   # This library copies the list of sources from common/reading/searching above,
   # instead of depending on the common/reading/searching libraries, because the
