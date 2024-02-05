@@ -61,6 +61,8 @@ public:
     void Characters(const char *ch, int len) {
         if (path == "/mediawiki/page/title") {
             page_title.append(ch, len);
+        } else if (path == "/mediawiki/page/ns") {
+            page_ns.append(ch, len);
         } else if (path == "/mediawiki/page/revision/text") {
             page_text.append(ch, len);
         }
@@ -68,18 +70,25 @@ public:
 
     void BeginPage() {
         page_title.clear();
+        page_ns.clear();
         page_text.clear();
         page_redirect.clear();
     }
 
     void EndPage() {
-        callback.HandlePage(page_title, page_text, page_redirect);
+        callback.HandlePage(ParserCallback::Page{
+            .title    = page_title,
+            .ns       = page_ns,
+            .text     = page_text,
+            .redirect = page_redirect,
+        });
     }
 
 private:
     ParserCallback &callback;
     std::string path;
     std::string page_title;
+    std::string page_ns;
     std::string page_text;
     std::string page_redirect;
 };

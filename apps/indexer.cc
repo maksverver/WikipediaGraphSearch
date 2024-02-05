@@ -22,33 +22,11 @@
 namespace wikipath {
 namespace {
 
+// Only include pages in the main namespace (0).
+const int include_namespace_id = 0;
+
 // If true, the indexer excludes all redirect pages.
 const bool exclude_redirects = true;
-
-// Set of namespace prefixes to exclude. For example, pages with a title of
-// "Category:Foo" would be excluded by this. The list here is derived from the
-// namespaces for the English Wikipedia, defined at:
-// https://en.wikipedia.org/wiki/Wikipedia:Namespace
-const std::unordered_set<std::string_view> exclude_namespaces = {
-                         "Talk",
-    "User",              "User talk",
-    "Wikipedia",         "Wikipedia talk",
-    "File",              "File talk",
-    "MediaWiki",         "MediaWiki talk",
-    "Template",          "Template talk",
-    "Help",              "Help talk",
-    "Category",          "Category talk",
-    "Portal",            "Portal talk",
-    "Draft",             "Draft talk",
-    "TimedText",         "TimedText talk",
-    "Module",            "Module talk",
-    "Book",              "Book talk",
-    "Education Program", "Education Program talk",
-    "Gadget",            "Gadget talk",
-    "Gadget definition", "Gadget definition talk",
-    "Special",
-    "Media",
-};
 
 // Log only 1 out of every 1000 messages about excluded pages.
 const int exclude_log_interval = 1000;
@@ -147,40 +125,45 @@ index_t GetPageIndex(const std::string &title) {
     return it != page_index.end() ? it->second : 0;
 }
 
-bool IncludePage(const std::string_view &title, const std::string_view &redirect) {
-    if (title.empty()) {
+bool IncludePage(const ParserCallback::Page &page) {
+    if (page.title.empty()) {
         if (excluded_pages++ % exclude_log_interval == 0) {
             std::cerr << "Excluding page with empty title!\n";
         }
         return false;
     }
-    if (exclude_redirects && !redirect.empty()) {
+    if (exclude_redirects && !page.redirect.empty()) {
         if (excluded_pages++ % exclude_log_interval == 0) {
-            std::cerr << "Excluding redirect from [" << title << "] to [" << redirect << "]\n";
+            std::cerr << "Excluding redirect from [" << page.title << "] to [" << page.redirect << "]\n";
         }
         return false;
     }
-    std::string_view::size_type i = title.find(':');
-    if (i != std::string_view::npos && exclude_namespaces.find(title.substr(0, i)) != exclude_namespaces.end()) {
-        if (excluded_pages++ % exclude_log_interval == 0) {
-            std::cerr << "Excluded page in namespace [" << title << "]\n";
+    if (auto ns = page.ParseNs(); ns) {
+        if (*ns != include_namespace_id) {
+            if (excluded_pages++ % exclude_log_interval == 0) {
+                std::cerr << "Excluded page [" << page.title << "] in namespace " << *ns << "\n";
+            }
+            return false;
         }
+    } else {
+        // Print this unconditionally, since it should rarely/never happen!
+        std::cerr << "No namespace defined for page [" << page.title << "]\n";
         return false;
     }
     return true;
 }
 
 struct ParsePageTitles : public ParserCallback {
-    virtual void HandlePage(const std::string &title, const std::string &, const std::string &redirect) {
-        if (!IncludePage(title, redirect)) return;
-        if (page_index.find(title) != page_index.end()) {
-            std::cerr << "Ignoring page with duplicate title: [" << title << "]\n";
+    virtual void HandlePage(const Page &page) {
+        if (!IncludePage(page)) return;
+        if (page_index.find(page.title) != page_index.end()) {
+            std::cerr << "Ignoring page with duplicate title: [" << page.title << "]\n";
         } else {
             assert(page_titles.size() < std::numeric_limits<index_t>::max());
             index_t i = page_titles.size();
-            page_titles.push_back(title);
-            page_index[title] = i;
-            metadata_writer->InsertPage(i, title);
+            page_titles.push_back(page.title);
+            page_index[page.title] = i;
+            metadata_writer->InsertPage(i, page.title);
         }
     }
 };
@@ -190,17 +173,17 @@ struct ParseLinks : public ParserCallback {
         outlinks = {{}};
     }
 
-    virtual void HandlePage(const std::string &title, const std::string &text, const std::string &redirect) {
-        if (!IncludePage(title, redirect)) return;
-        index_t i = GetPageIndex(title);
+    virtual void HandlePage(const Page &page) {
+        if (!IncludePage(page)) return;
+        index_t i = GetPageIndex(page.title);
         if (i < outlinks.size()) {
-            std::cerr << "Ignoring page with duplicate title: [" << title << "]\n";
+            std::cerr << "Ignoring page with duplicate title: [" << page.title << "]\n";
             return;
         }
         assert(i == outlinks.size());
 
         std::vector<index_t> v;
-        for (const auto &[target, title] : ExtractLinks(title, text)) {
+        for (const auto &[target, title] : ExtractLinks(page.title, page.text)) {
             index_t j = GetPageIndex(target);
             assert(i != j);
             if (j > 0) {
