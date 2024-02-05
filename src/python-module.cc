@@ -212,7 +212,7 @@ PYBIND11_MODULE(wikipath, module) {
       .def_property_readonly("metadata", &Reader::Metadata)
       .def("is_valid_page_id", &Reader::IsValidPageId, py::arg("page_id"))
       .def("random_page_id", &Reader::RandomPageId)
-      .def("parse_parge_argument", &Reader::ParsePageArgument, py::arg("arg"))
+      .def("parse_page_argument", &Reader::ParsePageArgument, py::arg("arg"))
       .def("page_title", &Reader::PageTitle, py::arg("page_id"))
       .def("page_ref", &Reader::PageRef, py::arg("page_id"))
       .def("link_text", &Reader::LinkText, py::arg("from_page_id"), py::arg("to_page_id"))
