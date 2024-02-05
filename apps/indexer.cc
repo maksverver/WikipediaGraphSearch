@@ -3,14 +3,13 @@
 #include "wikipath/metadata-writer.h"
 #include "wikipath/parser.h"
 
-#include <assert.h>
-#include <cstdlib>
-#include <stdlib.h>
-#include <string.h>
-
 #include <algorithm>
+#include <cassert>
+#include <cstdlib>
+#include <cstring>
 #include <filesystem>
 #include <iostream>
+#include <limits>
 #include <map>
 #include <optional>
 #include <string>
@@ -177,8 +176,8 @@ struct ParsePageTitles : public ParserCallback {
         if (page_index.find(title) != page_index.end()) {
             std::cerr << "Ignoring page with duplicate title: [" << title << "]\n";
         } else {
+            assert(page_titles.size() < std::numeric_limits<index_t>::max());
             index_t i = page_titles.size();
-            assert(i > 0);  // detect overflow
             page_titles.push_back(title);
             page_index[title] = i;
             metadata_writer->InsertPage(i, title);
