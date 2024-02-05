@@ -87,11 +87,15 @@ std::unique_ptr<MetadataWriter> metadata_writer;
 //    [[#internal]]
 //    [[Target|]]  (empty title renders as "Target")
 //    [[Foo:Bar (Quux)|]]   (renders as "Bar)
+//    [[:Foo]]   (renders as "Foo")
+//    [[:Foo:Bar]]   (renders as "Foo:Bar")
 //
 //  Details:
 //    https://www.mediawiki.org/wiki/Help:Links
 //    https://en.wikipedia.org/wiki/Help:Pipe_trick
+//    https://en.wikipedia.org/wiki/Help:Colon_trick
 Link ParseLink(std::string_view text) {
+    if (text.starts_with(':')) text.remove_prefix(1);
     Link link;
     std::string_view::size_type pipe_pos = text.find('|');
     std::string_view target_with_anchor = text.substr(0, pipe_pos);
