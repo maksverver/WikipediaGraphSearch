@@ -1,0 +1,99 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://w
+ww.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="en">
+  <siteinfo>
+    <sitename>Testwiki</sitename>
+    <dbname>testwiki</dbname>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="-2" case="first-letter">Media</namespace>
+      <namespace key="-1" case="first-letter">Special</namespace>
+      <namespace key="0" case="first-letter" />
+      <namespace key="1" case="first-letter">Talk</namespace>
+      <namespace key="2" case="first-letter">User</namespace>
+      <namespace key="3" case="first-letter">User talk</namespace>
+      <namespace key="4" case="first-letter">Wikipedia</namespace>
+      <namespace key="5" case="first-letter">Wikipedia talk</namespace>
+      <namespace key="14" case="first-letter">Category</namespace>
+      <namespace key="15" case="first-letter">Category talk</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Category:Colors</title>
+    <ns>14</ns>
+    <text xml:space="preserve"></text>
+  </page>
+  <page>
+    <title>Red</title>
+    <ns>0</ns>
+    <revision>
+      <text xml:space="preserve">
+Red is one of the three primary colors, the other two being [[Green]] and [[Blue]].
+
+[[Category:Colors]]
+      </text>
+    </revision>
+  </page>
+  <page>
+    <title>Green</title>
+    <ns>0</ns>
+    <revision>
+      <text xml:space="preserve">
+Green is one of the three primary colors, the other two being [[Red]] and [[Blue]].
+
+[[Category:Colors]]
+      </text>
+    </revision>
+  </page>
+  <page>
+    <title>Blue</title>
+    <ns>0</ns>
+    <revision>
+      <text xml:space="preserve">
+Blue is one of the three primary colors, the other two being [[Red]] and [[Green]].
+
+Blue should not be confused with [[Violet]].
+
+[[Category:Colors]]
+      </text>
+    </revision>
+  </page>
+  <page>
+    <title>Rose</title>
+    <ns>0</ns>
+    <revision>
+      <text xml:space="preserve">
+Roses are [[Red]], unlike [[Violet (flower)|violets]].
+      </text>
+    </revision>
+  </page>
+  <page>
+    <title>Violet (flower)</title>
+    <ns>0</ns>
+    <revision>
+      <text xml:space="preserve">
+Violets are flowers of a [[Violet (color)|]] color.
+      </text>
+    </revision>
+  </page>
+  <page>
+    <title>Violet (color)</title>
+    <ns>0</ns>
+    <revision>
+      <text xml:space="preserve">
+Violet is a color similar to [[Blue]].
+      </text>
+    </revision>
+  </page>
+  <!--
+    This is a redirect page, which exists to verify that the indexer ignores
+    redirect pages by default!
+  -->
+  <page>
+    <title>Violet</title>
+    <ns>0</ns>
+    <redirect title="Violet (color)" />
+    <revision>
+      <text xml:space="preserve">#REDIRECT [[Violet (color)]]</text>
+    </revision>
+  </page>
+</mediawiki>
