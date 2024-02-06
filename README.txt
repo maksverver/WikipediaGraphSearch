@@ -1,6 +1,22 @@
 Wikipedia shortest path search tool.
 
 
+DEPENDENCIES
+
+Tools:
+
+  - CMake
+  - A modern C++ compiler
+  - optional: Python
+
+Libraries:
+
+  - sqlite3 (https://www.sqlite.org/index.html) (all tools)
+  - libxml2 (https://gitlab.gnome.org/GNOME/libxml2) (indexer, xml-stats)
+  - optional: wt (https://www.webtoolkit.eu/wt) (websearch)
+  - optional: pybind11 (https://github.com/pybind/pybind11) (Python module)
+
+
 BUILDING
 
 % cmake -B build
@@ -9,15 +25,17 @@ BUILDING
 Binaries are written to build/apps/
 
 
-RUNNING
+RUNNING: index
 
-To use the tool, first download a Wikipedia database dump from
-https://dumps.wikimedia.org/ (e.g. "enwiki-20240120-pages-articles.xml.bz2") and
-extract it (e.g. with "bunzip2 -k").
+The `index` tool converts a Wikipedia database dump in XML format to an
+efficient graph datastructure which is needed by the other tools.
 
-Tip: the English wikipedia is large (>20 GB compressed). For testing, download a
-smaller wiki like the Simple English wiki (simplewiki, ~250 MB) or the Frisian
-wiki (fywiki, ~65 MB).
+Download a Wikipedia database dump from https://dumps.wikimedia.org/ (e.g.,
+"enwiki-20240120-pages-articles.xml.bz2") and extract it (e.g., "bunzip2 -k").
+
+Tip: the English wikipedia is large (>20 GB compressed, >90 GB uncompressed).
+For testing, download a smaller wiki like the Simple English wiki (simplewiki,
+~250 MB compressed) or the Frisian wiki (fywiki, ~65 MB compressed).
 
 Generate the page index with:
 
@@ -29,15 +47,18 @@ This generates two additional files:
  - enwiki-20240120-pages-articles.metadata
 
 The graph file contains the edge data and is the main data structure used to
-implement the search. Its structure is described in graph-file-format.txt.
+implement the search. Its structure is described in docs/graph-file-format.txt.
 
 The metadata file contains page and link titles, and is used to map from page
-titles to ids and back. It is a sqlite3 database file, with the schema defined
-in metadata-writer.cc.
+titles to ids and back. It is a sqlite3 database file with a fairly
+straightforward schema which is defined in src/metadata-writer.cc.
 
 After generating these two files, the xml file can be deleted.
 
-Now it's possible to find a path between two pages, e.g.:
+
+RUNNING: search, inspect
+
+The search tool finds a path betweeen two pages, e.g.:
 
 % ./search enwiki-20200401-pages-articles.graph 'Mongolia' 'Cheeseburger'
 Searching shortest path from #12481 (Mongolia) to #111090 (Cheeseburger)...
@@ -80,6 +101,9 @@ Searching shortest path from #5149995 (Bobby, the Petrol Boy) to #5180352 (Jacky
 #1095984 (1955 Tour de France; displayed as: 1955)
 #5180352 (Jacky Bovay)
 
+
+RUNNING: websearch
+
 The websearch binary (which requires Wt, the web toolkit) runs the web frontend:
 
 % ./websearch enwiki-20240120-pages-articles.graph --docroot /usr/share/Wt \
@@ -95,7 +119,12 @@ Open http://localhost:8080/ in a web browser to use the tool.
 
 DEVELOPMENT
 
-To develop in Visual Studio code with clangd, generate
-build/compile_commands.json by running:
+For development, generate the build directory with:
 
 % cmake -B build -D CMAKE_EXPORT_COMPILE_COMMANDS=1 -D CMAKE_BUILD_TYPE=Debug
+
+This generates build/compile_commands.json, which is used by the clangd language
+server to determine how to build source files.
+
+
+EOF
