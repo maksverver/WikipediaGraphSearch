@@ -1,0 +1,112 @@
+GET /api/corpus
+{
+  "corpus": {
+    "graph": "somewiki-20240102-pages-articles.graph",
+    "vertex_count": 123,
+    "edge_count": 456,
+  }
+}
+
+
+GET /api/page?page=Foo%20Bar  # retrieve by title ("Foo Bar")
+GET /api/page?page=%2342      # retrieve by id ("#42")
+GET /api/page?page=?          # retrieve random page
+{
+  "page": {
+    "id": 42,
+    "title": "Foo Bar",
+  }
+}
+
+Or if page is not found:
+{
+  "error": "Page not found",
+}
+
+
+GET /api/shortest-path?start=A&finish=B
+
+Searches for a shortest path from page `start` to page `finish`.
+
+Response if path found:
+{
+  "start": {
+    page: {
+      "id": 1,
+      "title": "A",
+    },
+  }
+  "finish": {
+    page: {
+      "id": 3,
+      "title": "C",
+    },
+  },
+  "path": [
+    {
+      page: {
+        "id": 1,
+        "title": "A",
+      }
+    },
+    {
+      page: {
+        "id": 2,
+        "title": "B",
+      },
+      "displayed_as": "b"
+    },
+    {
+      page: {
+        "id": 3,
+        "title": "C",
+      },
+    }
+  ],
+  "stats": {
+    "vertices_reached": 123;
+    "vertices_expanded": 45;
+    "edges_expanded": 67;
+    "time_taken_ms": 89;
+  }
+}
+
+Response if path not found:
+{
+  "path": [],
+  "start": {
+    "id": 1,
+    "title": "A",
+  },
+  "finish": {
+    "id": 3,
+    "title": "C",
+  },
+  "stats": {
+    "vertices_reached": 123;
+    "vertices_expanded": 45;
+    "edges_expanded": 67;
+    "time_taken_ms": 89;
+  }
+}
+
+Response if start and/or finish pages are not found:
+{
+  "start": {
+    "error": {
+      "message": "Page not found"
+    }
+  },
+  "finish": {
+    "error": {
+      "message": "Page not found"
+    }
+  },
+  "error": {
+    "message": "Page not found",
+  }
+}
+
+Like the `search` tool, the API accepts page references by title, by id (#42),
+and by random choice "?", but note that spaces, special characters (like '#')
+and UTF-8 sequences must be percent-encoded!
