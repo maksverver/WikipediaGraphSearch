@@ -5,15 +5,14 @@
 
 namespace wikipath {
 
-const uint32_t graph_header_magic_value = 0x57494b49u;  // WIKI
+const uint32_t graph_header_magic_value    = 0x68707247u;  // Grph
+const uint32_t graph_header_reserved_value = 0;
 
 enum GraphHeaderFields {
     GRAPH_HEADER_MAGIC,
-    GRAPH_HEADER_FILE_SIZE,
+    GRAPH_HEADER_RESERVED,
     GRAPH_HEADER_VERTEX_COUNT,
     GRAPH_HEADER_EDGE_COUNT,
-    GRAPH_HEADER_FORWARD_EDGE_INDEX_OFFSET,
-    GRAPH_HEADER_BACKWARD_EDGE_INDEX_OFFSET,
     GRAPH_HEADER_FIELD_COUNT
 };
 

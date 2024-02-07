@@ -9,16 +9,14 @@
 //    making them immutable has the benefit that they can used as dict keys and
 //    in sets.
 //
-//  - GraphReader.forward_edges() and GraphReader.backward_edges() return lists
-//    of page ids, instead of iterable EdgeLists, because typically it's more
-//    efficient to retrieve the entire edge list at once, instead of iterating
-//    over it page-by-page on the Python side.
+//  - GraphReader.forward_edges() and GraphReader.backward_edges() currently
+//    return list copies instead of immutable views.
 //
 //  - shortest_path() is defined as a method on GraphReader, instead of a
-//    standalone method, since it logically belongs there.
+//    standalone method, where it logically belongs.
 //
 //  - shortest_path_with_stats() is a separate method that returns a pair of
-//    (path, stats) since Python does not support output arguments.
+//    (path, stats) because Python does not support output arguments.
 //
 // I intentionally omitted docstrings, because I don't want to duplicate
 // documentation with the existing comments on the C++ classes. To understand
@@ -72,6 +70,10 @@ std::ostream &operator<<(std::ostream &os, const QuotedString &s) {
   return os;
 }
 
+template<class T> std::vector<T> ToVector(std::span<const T> span) {
+  return std::vector<T>(span.begin(), span.end());
+}
+
 }  // namespace
 
 PYBIND11_MODULE(wikipath, module) {
@@ -82,15 +84,13 @@ PYBIND11_MODULE(wikipath, module) {
       .def("forward_edges",
           [](GraphReader &gr, index_t page_id) {
             ValidatePageIndex(gr.VertexCount(), page_id);
-            EdgeList el = gr.ForwardEdges(page_id);
-            return std::vector<index_t>(el.begin(), el.end());
+            return ToVector(gr.ForwardEdges(page_id));
           },
           py::arg("page_id"))
       .def("backward_edges",
           [](GraphReader &gr, index_t page_id) {
             ValidatePageIndex(gr.VertexCount(), page_id);
-            EdgeList el = gr.BackwardEdges(page_id);
-            return std::vector<index_t>(el.begin(), el.end());
+            return ToVector(gr.BackwardEdges(page_id));
           },
           py::arg("page_id"))
       .def("shortest_path",

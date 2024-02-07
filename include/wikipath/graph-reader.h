@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #include <memory>
+#include <span>
 
 namespace wikipath {
 
@@ -50,6 +51,8 @@ private:
 // If the file is corrupt, we may crash (or worse!)
 class GraphReader {
 public:
+    using edges_t = std::span<const index_t>;
+
     ~GraphReader();
 
     GraphReader(const GraphReader&) = delete;
@@ -57,10 +60,11 @@ public:
 
     static std::unique_ptr<GraphReader> Open(const char *filename);
 
-    EdgeList ForwardEdges(index_t i) const { return EdgeListAt(forward_index[i]); }
-    EdgeList BackwardEdges(index_t i) const { return EdgeListAt(backward_index[i]); }
+    // Precondition: i is between 0 and VertexCount() (exclusive)
+    edges_t ForwardEdges(index_t i) const { return forward_edges.Edges(i); }
+    edges_t BackwardEdges(index_t i) const { return backward_edges.Edges(i); }
 
-    // Number of vertices, including 0. Valid vertex indices are between 1 and Size() (exclusive).
+    // Number of vertices, including 0.
     index_t VertexCount() const { return vertex_count; }
 
     // Number of edges (in one direction only; i.e. the forward and backward edges
@@ -68,15 +72,25 @@ public:
     index_t EdgeCount() const { return edge_count; }
 
 private:
-    GraphReader(uint32_t *data, size_t data_len);
-    EdgeList EdgeListAt(uint32_t offset) const { return EdgeList(offset > 0 ? &data[offset] : nullptr); }
+    GraphReader(void *data, size_t data_len);
 
-    const uint32_t *const data;
-    const size_t data_len;
-    const uint32_t *const forward_index;
-    const uint32_t *const backward_index;
-    const uint32_t vertex_count;
-    const uint32_t edge_count;
+    static_assert(std::is_same<index_t, uint32_t>::value);
+
+    struct edges_index_t {
+        const uint32_t *index;
+        const uint32_t *edges;
+
+        edges_t Edges(index_t i) const {
+            return edges_t(&edges[index[i]], &edges[index[i + 1]]);
+        }
+    };
+
+    edges_index_t forward_edges;
+    edges_index_t backward_edges;
+    uint32_t vertex_count;
+    uint32_t edge_count;
+    void *data;
+    size_t data_len;
 };
 
 }  // namespace wikipath

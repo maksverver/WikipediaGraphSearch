@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# Python implementation of a JSON-over-HTTP server that supports Wikipedia
-# graph search. See docs/http-server-api.txt for the supported methods.
+# Python implementation of a REST API to support Wikipedia graph search.
+# See docs/http-server-api.txt for the supported methods.
 
 import argparse
 import http.server
@@ -110,10 +110,6 @@ def PageDict(page):
     return {"page": {"id": page.id, "title": page.title}}
 
 
-def SendPageResponse(req, page, header_only):
-    SendJsonResponse(req, PageDict(page), header_only=header_only)
-
-
 def GET_api_corpus(req, query, header_only):
     req.send_response(200, 'OK')
     req.send_header('Content-Type', 'application/json')
@@ -124,8 +120,8 @@ def GET_api_corpus(req, query, header_only):
 
 def GET_api_page(req, query, header_only):
     page = GetPage(GetQueryArg(parse_qs(query), 'page'))
-    result = PageDict(page)
-    SendPageResponse(req, header_only=header_only, status=(200, 'OK') if page else (404, 'Not found'))
+    SendJsonResponse(req, PageDict(page), header_only=header_only,
+            status=(200, 'OK') if page else (404, 'Not found'))
 
 
 def GET_api_shortest_path(req, query, header_only):
@@ -221,7 +217,7 @@ def Main():
 
     get_corpus_response_bytes = json.dumps({
         'corpus': {
-            'graph': os.path.basename(graph_filename),
+            'graph_filename': os.path.basename(graph_filename),
             'vertex_count': reader.graph.vertex_count,
             'edge_count': reader.graph.edge_count,
         }

@@ -1,7 +1,7 @@
 GET /api/corpus
 {
   "corpus": {
-    "graph": "somewiki-20240102-pages-articles.graph",
+    "graph_filename": "somewiki-20240102-pages-articles.graph",
     "vertex_count": 123,
     "edge_count": 456,
   }

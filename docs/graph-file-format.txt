@@ -1,22 +1,71 @@
-The file is an array of little-endian unsigned 32-bit integers.
-All sizes and indices are 32-bit values, which must be multiplied by 4 to obtain file offsets in bytes.
-The file size is limited to 2**32 entries (16 GiB).
-Vertex 0 is a reserved value which has no edges.
+A compact file format for directed graphs.
+
+The file is an array of little-endian unsigned 32-bit integers, which can be
+mapped into memory in its entirety. All sizes and indices are 32-bit values,
+which must be multiplied by 4 to obtain file offsets in bytes.
 
 Header
-  1 int: magic number 0x57494b49
-  1 int: total file size
-  1 int: number of vertices (V) including 0
-  1 int: number of edges (E)
-  1 int: offset of forward edge index
-  1 int: offset of backward edge index
+    1 int:  magic number        0x47727068 ("Grph")
+    1 int:  reserved            0
+    1 int:  number of vertices  (V)
+    1 int:  number of edges     (E)
+  1+V ints: forward edge index  (nondecreasing, from 0 to E, inclusive)
+    E ints: forward edge array  (between 0 and V, exclusive)
+  1+V ints: backward edge index (nondecreasing, from 0 to E, inclusive)
+    E ints: backward edge array (between 0 and V, exclusive)
 
-Forward edge index
-  V ints: offset of forward edge list (or 0 for empty)
+The total file size is 6 + 2V + 2E ints or 24 + 8V + 8E bytes.
 
-Backward edge index
-  V ints: offset of backward edge list (or 0 for empty)
+In the Wikipedia graph, vertex 0 is reserved and has no edges, but the graph
+format does not require this, and vertex 0 is included in the total vertex
+count.
 
-Edge list:
-  * ints: index of adjacent vertex (between 1 and V, exclusive)
-  1 int: 0 (end of list marker)
+The forward edge array stores the destination vertices of all sorted edges,
+while the forward edge index stores the start offset in the edge array for each
+vertex, followed the size of the edge array (E). End offsets are not stored
+explicitly, since the end offset of vertex v is equal to the start offset of
+vertex v + 1.
+
+The backward edge index and backward edge array are the same, but using backward
+edges, which can be obtained by swapping source and destination vertices, and
+resorting the edge list.
+
+
+EDGE INDEX EXAMPLE
+
+A graph like this:
+
+      1
+     / \
+    v   v
+   2 --> 3
+    ^   /
+     \ v
+      4
+
+...has these sorted edges:
+
+  edge 0: vertex 1 -> vertex 2
+  edge 1: vertex 1 -> vertex 3
+  edge 2: vertex 2 -> vertex 3
+  edge 3: vertex 3 -> vertex 4
+  edge 4: vertex 4 -> vertex 2
+
+The edge array stores the destination vertices only: 2, 3, 3, 4, 2
+
+Because we sorted the array, each source vertex corresponds with a contiguous
+subarray of the edge array:
+
+  vertex 0: edges 0 to 0 (exclusive)
+  vertex 1: edges 0 to 2 (exclusive)
+  vertex 2: edges 2 to 3 (exclusive)
+  vertex 3: edges 3 to 4 (exclusive)
+  vertex 4: edges 4 to 5 (exclusive)
+
+Note that the start indices (0, 0, 2, 3, 4) are equal to the end indices (0, 2,
+3, 4, 5) except they are shifted by one element, which makes sense because the
+end index for vertex v is the start index for vertex v + 1. That's why we only
+store the start indices, plus the final end index (which is equal to the number
+of edges, E).
+
+So the edge index contains: 0, 0, 2, 3, 4, 5
