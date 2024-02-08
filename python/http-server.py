@@ -105,9 +105,14 @@ def ErrorDict(message):
     return {"error": {"message": message}}
 
 
-def PageDict(page):
+def PageDict(page, prev_page=None):
     if not page: return ErrorDict("Page not found.")
-    return {"page": {"id": page.id, "title": page.title}}
+    result = {"page": {"id": page.id, "title": page.title}}
+    if prev_page is not None:
+        text = reader.link_text(prev_page.id, page.id)
+        if text is not None and text != page.title:
+            result['displayed_as'] = text
+    return result
 
 
 def GET_api_corpus(req, query, header_only):
@@ -133,11 +138,17 @@ def GET_api_shortest_path(req, query, header_only):
         "finish": PageDict(finish),
     }
     if not (start and finish):
-        result["error"] = ErrorDict("Page not found."),
+        result["error"] = {"message": "Page not found."}
         SendJsonResponse(req, result, header_only=header_only, status=(404, 'Not found'))
         return
     path, stats = reader.graph.shortest_path_with_stats(start.id, finish.id)
-    result["path"] = [PageDict(GetPageById(page_id)) for page_id in path]
+    result_path = []
+    prev_page = None
+    for page_id in path:
+        page = GetPageById(page_id)
+        result_path.append(PageDict(page, prev_page))
+        prev_page = page
+    result["path"] = result_path
     result["stats"] = {
         "vertices_reached": stats.vertices_reached,
         "vertices_expanded": stats.vertices_expanded,
@@ -205,6 +216,7 @@ def Main():
     parser.add_argument('-d', '--docroot', default="htdocs/", help='Directory with static files to serve')
     parser.add_argument('-h', '--host', default="localhost", help='Host to bind to')
     parser.add_argument('-p', '--port', default="8001", help='Port to bind to')
+    parser.add_argument('--wiki_base_url', default='https://en.wikipedia.org/wiki/')
     parser.add_argument('filename.graph')
     args = parser.parse_args()
 
@@ -217,6 +229,7 @@ def Main():
 
     get_corpus_response_bytes = json.dumps({
         'corpus': {
+            'base_url': args.wiki_base_url,
             'graph_filename': os.path.basename(graph_filename),
             'vertex_count': reader.graph.vertex_count,
             'edge_count': reader.graph.edge_count,

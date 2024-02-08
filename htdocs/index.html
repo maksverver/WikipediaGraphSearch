@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <title>Wikipedia shortest path search</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- <link rel="icon" href="favicon.png"> -->
+  <script src="app.js" async></script>
+</head>
+<body onload="new App()">
+  <h1>Wikipedia Shortest Path Search</h1>
+
+  <noscript><p>⚠️ This page requires JavaScript!</p></noscript>
+
+  <h4>Origin page:</h4>
+  <p
+    ><input type="text" id="start-page-title-text" disabled
+    ><button id="start-page-randomize-button" type="button" title="Randomize origin" disabled
+    >🎲</button
+    ></p>
+
+  <h4>Destination page:</h4>
+  <p
+    ><input type="text" id="finish-page-title-text" disabled
+    ><button id="finish-page-randomize-button" type="button" title="Randomize destination" disabled
+    >🎲</button
+    ></p>
+
+  <p>
+    <button id="search-button" type="button" disabled>Search!</button>
+    <button id="surprise-me-button" type="button" disabled>Surprise me!</button>
+  </p>
+
+  <div id="path-found" style="display:none">
+    <h2>Shortest path</h2>
+    <ol id="path-list"></li>
+  </div>
+
+  <div id="path-not-found" style="display:none">
+    <h2>No path found!</h2>
+    TODO!
+  </div>
+
+  <div id="search-error" style="display:none">
+    <h2>Search error!</h2>
+    <div id="search-error-message"></div>
+  </div>
+
+  <h3>Stats for nerds</h3>
+  <p id="corpus-info" style="display:none">
+    Serving <code><span id="corpus-graph">unknown.graph</span></code>,
+    which contains <span id="corpus-pages">unknown</span> pages
+    and <span id="corpus-links">unknown</span> links.
+  </p>
+
+  <p>Source code: <a href="https://github.com/maksverver/WikipediaGraphSearch" target="_blank">https://github.com/maksverver/WikipediaGraphSearch</a>.</p>
+</body>
+</html>
