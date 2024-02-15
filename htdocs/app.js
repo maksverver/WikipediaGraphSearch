@@ -1,6 +1,8 @@
 'use strict';
 
-const enableDebug = document.location.hostname === 'localhost';
+// Add '#debug=1' to the URL to enable debug features, like delayed loading.
+const hashParams = new URLSearchParams(document.location.hash.substring(1));
+const enableDebug = hashParams.get('debug') > 0;
 
 function addDelay(func, minDelay, maxDelay) {
   return async function(...args) {
