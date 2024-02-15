@@ -169,6 +169,7 @@ class App {
       const searchErrorElem = document.getElementById('search-error');
       pageFoundElem.style.display = 'none';
       pageNotfoundElem.style.display = 'none';
+      searchErrorElem.style.display = 'none';
 
       const path = json?.path;
       if (Array.isArray(path)) {
