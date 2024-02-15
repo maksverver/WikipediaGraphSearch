@@ -1,7 +1,162 @@
-body {
-  font: 11pt sans-serif;
+:root {
+  --blue-1: #28d;
+  --blue-2: #bddcf5;
+  --red-1: #e22;
+
+  --grey-1: #444;
+  --grey-2: #888;
+  --grey-3: #ccc;
+  --grey-4: #ddd;
+
+  font: 12px Verdana, Arial, sans-serif;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--grey-4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 input.error {
-  background: red;
+  background: var(--red-1);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  background: white;
+  min-width: 600px;
+  max-width: 800px;
+}
+
+.content header, .content main, .content footer {
+  padding: 0.5em;
+}
+
+main {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  text-align: center;
+
+}
+
+.start-and-finish {
+  display: flex;
+  /* flex-direction: row;
+     flex-wrap: wrap; */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+button {
+  border: 1px solid var(--blue-1);
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-weight: bold;
+  background: linear-gradient(0deg, #e0e0e0 0%, #e8e8e8 25%,#f0f0f0 75%, #f8f8f8 100%);
+  color: black;
+}
+
+button:hover:not(:disabled) {
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--blue-2);
+}
+
+button:active {
+  background: var(--blue-1);
+  color: white;
+}
+
+button:focus {
+  outline: 1px solid var(--blue-1);
+}
+
+.page-input {
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-input label {
+  font-size: 125%;
+  font-weight: bold;
+  padding: 0 8px 8px 8px;
+}
+
+.text-input-and-icon {
+  display: flex;
+  flex-direction: row;
+}
+
+.text-input-and-icon input {
+  height: 24px;
+  padding: 4px 12px;
+}
+
+.text-input-and-icon svg {
+  padding: 0;
+}
+
+.text-input-and-icon input {
+  border-radius: 20px;
+  border: 1px solid var(--blue-1);
+}
+
+.text-input-and-icon input:focus {
+  outline: 1px solid var(--blue-1);
+}
+
+.text-input-and-icon button {
+	padding: 0;
+  margin: 4px;
+  width: 24px;
+  height: 24px;
+
+  border: 0;
+  border-radius: 4px;
+
+  margin-left: -36px;
+  margin-right: 20px;  /* -(width + margin-left) */
+}
+
+.text-input-and-icon button:not(:active, :hover, :disabled) {
+  background: rgba(255, 255, 255, 80%);
+}
+
+.text-input-and-icon button:focus {
+  outline-width: 2px;
+}
+
+button:disabled,
+.text-input-and-icon input:disabled {
+  background: var(--grey-3);
+  color: var(--grey-2);
+  border-color: var(--grey-1);
+  outline-color: var(--grey-1);
+}
+
+.search-buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px;
+}
+
+.search-buttons button {
+  min-width: 10em;
 }

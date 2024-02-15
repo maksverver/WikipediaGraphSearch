@@ -2,57 +2,78 @@
 <html lang="en-US">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Wikipedia shortest path search</title>
   <link rel="stylesheet" href="style.css">
   <!-- <link rel="icon" href="favicon.png"> -->
   <script src="app.js" async></script>
 </head>
 <body onload="new App()">
-  <h1>Wikipedia Shortest Path Search</h1>
+  <div class="content">
+    <header>
+      <h1>Wikipedia Shortest Path Search</h1>
+    </header>
 
-  <noscript><p>⚠️ This page requires JavaScript!</p></noscript>
+    <main>
+      <noscript><p>⚠️ This page requires JavaScript to run!</p></noscript>
+      <div class="start-and-finish">
+        <div class="page-input">
+          <label for="start-page-title-text">Origin</label>
+          <div class="text-input-and-icon">
+            <input type="text" id="start-page-title-text" size="40" disabled>
+            <button id="start-page-randomize-button" type="button" title="Randomize origin" disabled>
+              <!-- Must use an svg-tag instead of a simpler img-tag to enable overriding stroke and fill colors with CSS. -->
+              <svg width="24" height="24" viewBox="0 0 48 48" version="1.1" stroke="currentColor" fill="currentColor">
+                <use xlink:href="die.svg#group" />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div class="page-input">
+          <label for="finish-page-title-text">Destination</label>
+          <div class="text-input-and-icon">
+            <input id="finish-page-title-text" size="40" type="text" disabled>
+            <button id="finish-page-randomize-button" type="button" title="Randomize destination" disabled>
+              <!-- Must use an svg-tag instead of a simpler img-tag to enable overriding stroke and fill colors with CSS. -->
+              <svg width="24" height="24" viewBox="0 0 48 48" version="1.1" stroke="currentColor" fill="currentColor">
+                <use xlink:href="die.svg#group" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
 
-  <h4>Origin page:</h4>
-  <p
-    ><input type="text" id="start-page-title-text" disabled
-    ><button id="start-page-randomize-button" type="button" title="Randomize origin" disabled
-    >🎲</button
-    ></p>
+      <div class="search-buttons">
+        <button id="search-button" type="button" disabled>Search!</button>
+        <button id="surprise-me-button" type="button" disabled>Surprise me!</button>
+      </div>
 
-  <h4>Destination page:</h4>
-  <p
-    ><input type="text" id="finish-page-title-text" disabled
-    ><button id="finish-page-randomize-button" type="button" title="Randomize destination" disabled
-    >🎲</button
-    ></p>
+      <div id="path-found" style="display:none">
+        <h2>Shortest path</h2>
+        <ol id="path-list"></ol>
+      </div>
 
-  <p>
-    <button id="search-button" type="button" disabled>Search!</button>
-    <button id="surprise-me-button" type="button" disabled>Surprise me!</button>
-  </p>
+      <div id="path-not-found" style="display:none">
+        <h2>No path found!</h2>
+        TODO!
+      </div>
 
-  <div id="path-found" style="display:none">
-    <h2>Shortest path</h2>
-    <ol id="path-list"></li>
+      <div id="search-error" style="display:none">
+        <h2>Search error!</h2>
+        <div id="search-error-message"></div>
+      </div>
+    </main>
+
+    <footer>
+      <h3>Stats for nerds</h3>
+      <p id="corpus-info" style="display:none">
+        Serving <code><span id="corpus-graph">unknown.graph</span></code>,
+        which contains <span id="corpus-pages">unknown</span> pages
+        and <span id="corpus-links">unknown</span> links.
+      </p>
+
+      <p>Source code: <a href="https://github.com/maksverver/WikipediaGraphSearch" target="_blank">https://github.com/maksverver/WikipediaGraphSearch</a>.</p>
+    </footer>
   </div>
-
-  <div id="path-not-found" style="display:none">
-    <h2>No path found!</h2>
-    TODO!
-  </div>
-
-  <div id="search-error" style="display:none">
-    <h2>Search error!</h2>
-    <div id="search-error-message"></div>
-  </div>
-
-  <h3>Stats for nerds</h3>
-  <p id="corpus-info" style="display:none">
-    Serving <code><span id="corpus-graph">unknown.graph</span></code>,
-    which contains <span id="corpus-pages">unknown</span> pages
-    and <span id="corpus-links">unknown</span> links.
-  </p>
-
-  <p>Source code: <a href="https://github.com/maksverver/WikipediaGraphSearch" target="_blank">https://github.com/maksverver/WikipediaGraphSearch</a>.</p>
 </body>
 </html>
