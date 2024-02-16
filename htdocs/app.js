@@ -164,41 +164,69 @@ class App {
         // TODO: show error
       }
 
-      const pageFoundElem = document.getElementById('path-found');
+      const pathFoundElem = document.getElementById('path-found');
       const pageNotfoundElem = document.getElementById('path-not-found');
       const searchErrorElem = document.getElementById('search-error');
-      pageFoundElem.style.display = 'none';
+      pathFoundElem.style.display = 'none';
       pageNotfoundElem.style.display = 'none';
       searchErrorElem.style.display = 'none';
+
+      const makePageSpan = (json) => {
+        const pageSpan = document.createElement('span');
+        pageSpan.className = 'page';
+        const title = json?.page?.title;
+        const a = document.createElement('a');
+        a.href = this.wikipediaBaseUrl + encodeURI(title);
+        a.textContent = title;
+        a.target = '_blank';
+        pageSpan.appendChild(a);
+        const displayedAs = json?.displayed_as;
+        if (displayedAs) {
+          pageSpan.appendChild(document.createElement('br'));
+          const em = document.createElement('em');
+          em.appendChild(document.createTextNode(displayedAs));
+          pageSpan.appendChild(document.createTextNode(' (displayed as: '));
+          pageSpan.appendChild(em);
+          pageSpan.appendChild(document.createTextNode(')'));
+        }
+        return pageSpan;
+      };
+
+      const replaceElemById = (oldElemId, newElem) => {
+        const elem = document.getElementById(oldElemId);
+        if (!elem) {
+          console.warn(`Element with id "${oldElemId}" not found!`);
+          return;
+        }
+        newElem.id = oldElemId;
+        elem.parentElement.replaceChild(newElem, elem);
+      }
 
       const path = json?.path;
       if (Array.isArray(path)) {
         if (path.length > 0) {
-          pageFoundElem.style.display = null;
-          const ol = document.getElementById('path-list');
-          ol.replaceChildren();
-          for (const elem of path) {
-            const title = elem?.page?.title;
-            const a = document.createElement('a');
-            a.href = this.wikipediaBaseUrl + encodeURI(title);
-            a.textContent = title;
-            a.target = '_blank';
-            const li = document.createElement('li');
-            li.appendChild(a);
-            const displayedAs = elem?.displayed_as;
-            if (displayedAs) {
-              const em = document.createElement('em');
-              em.appendChild(document.createTextNode(displayedAs));
-              li.appendChild(document.createTextNode(' (displayed as: '));
-              li.appendChild(em);
-              li.appendChild(document.createTextNode(')'));
+          pathFoundElem.style.display = null;
+          const pathListElem = document.getElementById('path-found-list');
+          pathListElem.replaceChildren();
+          for (var i = 0; i < path.length; ++i) {
+            if (i > 0) {
+                const linkDiv = document.createElement('div');
+                linkDiv.className = 'link';
+                pathListElem.appendChild(linkDiv);
             }
-            ol.appendChild(li);
+            const rowDiv = document.createElement('div');
+            rowDiv.className = 'row';
+            const indexSpan = document.createElement('span');
+            indexSpan.className = 'index';
+            indexSpan.appendChild(document.createTextNode(String(i + 1)));
+            rowDiv.appendChild(indexSpan);
+            rowDiv.appendChild(makePageSpan(path[i]));
+            pathListElem.appendChild(rowDiv);
           }
         } else {
           pageNotfoundElem.style.display = null;
-          // TODO: show details
-          console.warn('path not found');
+          replaceElemById('path-not-found-start', makePageSpan(json?.start));
+          replaceElemById('path-not-found-finish', makePageSpan(json?.finish));
         }
       } else {
         document.getElementById('search-error-message').textContent = json?.error?.message ?? 'Missing error!';

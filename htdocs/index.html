@@ -16,46 +16,60 @@
 
     <main>
       <noscript><p>⚠️ This page requires JavaScript to run!</p></noscript>
-      <div class="start-and-finish">
-        <div class="page-input">
-          <label for="start-page-title-text">Origin</label>
-          <div class="text-input-and-icon">
-            <input type="text" id="start-page-title-text" size="40" disabled>
-            <button id="start-page-randomize-button" type="button" title="Randomize origin" disabled>
-              <!-- Must use an svg-tag instead of a simpler img-tag to enable overriding stroke and fill colors with CSS. -->
-              <svg width="24" height="24" viewBox="0 0 48 48" version="1.1" stroke="currentColor" fill="currentColor">
-                <use xlink:href="die.svg#group" />
-              </svg>
-            </button>
-          </div>
-        </div>
-        <div class="page-input">
-          <label for="finish-page-title-text">Destination</label>
-          <div class="text-input-and-icon">
-            <input id="finish-page-title-text" size="40" type="text" disabled>
-            <button id="finish-page-randomize-button" type="button" title="Randomize destination" disabled>
-              <!-- Must use an svg-tag instead of a simpler img-tag to enable overriding stroke and fill colors with CSS. -->
-              <svg width="24" height="24" viewBox="0 0 48 48" version="1.1" stroke="currentColor" fill="currentColor">
-                <use xlink:href="die.svg#group" />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </div>
 
-      <div class="search-buttons">
-        <button id="search-button" type="button" disabled>Search!</button>
-        <button id="surprise-me-button" type="button" disabled>Surprise me!</button>
+      <div class="input-controls">
+        <div class="start-and-finish">
+          <div class="page-input">
+            <label for="start-page-title-text">Origin</label>
+            <div class="text-input-and-icon">
+              <input type="text" id="start-page-title-text" size="40" disabled>
+              <button id="start-page-randomize-button" type="button" title="Randomize origin" disabled>
+                <!-- Must use an svg-tag instead of a simpler img-tag to enable overriding stroke and fill colors with CSS. -->
+                <svg width="24" height="24" viewBox="0 0 48 48" version="1.1" stroke="currentColor" fill="currentColor">
+                  <use xlink:href="die.svg#group" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="page-input">
+            <label for="finish-page-title-text">Destination</label>
+            <div class="text-input-and-icon">
+              <input id="finish-page-title-text" size="40" type="text" disabled>
+              <button id="finish-page-randomize-button" type="button" title="Randomize destination" disabled>
+                <!-- Must use an svg-tag instead of a simpler img-tag to enable overriding stroke and fill colors with CSS. -->
+                <svg width="24" height="24" viewBox="0 0 48 48" version="1.1" stroke="currentColor" fill="currentColor">
+                  <use xlink:href="die.svg#group" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="search-buttons">
+          <button id="search-button" type="button" disabled>Search!</button>
+          <button id="surprise-me-button" type="button" disabled>Surprise me!</button>
+        </div>
       </div>
 
       <div id="path-found" style="display:none">
-        <h2>Shortest path</h2>
-        <ol id="path-list"></ol>
+        <h2>Shortest path found</h2>
+        <div id="path-found-list" class="path-list">
+        </div>
       </div>
 
       <div id="path-not-found" style="display:none">
-        <h2>No path found!</h2>
-        TODO!
+        <h2>No path found</h2>
+        <div class="path-list">
+          <div class="row">
+            <span class="index">1</span>
+            <span class="page" id="path-not-found-start"></span>
+          </div>
+          <div class="link-missing"><img src="link-missing.svg" title="❌ link missing"></div>
+          <div class="row">
+            <span class="index">∞</span>
+            <span class="page" id="path-not-found-finish"></span>
+          </div>
+        </div>
       </div>
 
       <div id="search-error" style="display:none">
@@ -65,14 +79,33 @@
     </main>
 
     <footer>
-      <h3>Stats for nerds</h3>
-      <p id="corpus-info" style="display:none">
-        Serving <code><span id="corpus-graph">unknown.graph</span></code>,
-        which contains <span id="corpus-pages">unknown</span> pages
-        and <span id="corpus-links">unknown</span> links.
-      </p>
-
-      <p>Source code: <a href="https://github.com/maksverver/WikipediaGraphSearch" target="_blank">https://github.com/maksverver/WikipediaGraphSearch</a>.</p>
+      <div class="info-box" id="corpus-info" style="display:none">
+        <header><h4>Corpus information</h4></header>
+        <content>
+          <table>
+            <tr>
+              <th>Graph filename:</th>
+              <td id="corpus-graph">unknown.graph</td>
+            </tr>
+            <tr>
+              <th>Page count:</th>
+              <td id="corpus-pages">unknown</td>
+            </tr>
+            <tr>
+              <th>Link count:</th>
+              <td id="corpus-links">unknown</td>
+            </tr>
+          </table>
+        </content>
+      </div>
+      <div class="info-box">
+        <header><h4>Source code</h4></header>
+        <content>
+          <p>
+            <a href="https://github.com/maksverver/WikipediaGraphSearch" target="_blank">https://github.com/maksverver/WikipediaGraphSearch</a>
+          </p>
+        </content>
+      </div>
     </footer>
   </div>
 </body>

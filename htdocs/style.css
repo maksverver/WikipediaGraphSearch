@@ -1,28 +1,40 @@
 :root {
-  --blue-1: #28d;
-  --blue-2: #bddcf5;
-  --red-1: #e22;
+  --blue-1: #11446e;
+  --blue-2: #28d;
+  --blue-3: #bddcf5;
+  --red-1: #c11;
+  --red-2: #e22;
+  --red-3: #f33;
 
   --grey-1: #444;
   --grey-2: #888;
   --grey-3: #ccc;
   --grey-4: #ddd;
 
-  font: 12px Verdana, Arial, sans-serif;
+  font: 14px Verdana, Arial, sans-serif;
+}
+
+a, a:visited {
+  color: var(--blue-1);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
 }
 
 html, body {
   height: 100%;
   margin: 0;
   padding: 0;
-  background: var(--grey-4);
+  /*background: var(--grey-4);*/
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
 input.error {
-  background: var(--red-1);
+  background: var(--red-3);
 }
 
 .content {
@@ -31,8 +43,6 @@ input.error {
   align-items: center;
   height: 100%;
   background: white;
-  min-width: 600px;
-  max-width: 800px;
 }
 
 .content header, .content main, .content footer {
@@ -45,11 +55,6 @@ main {
   flex-direction: column;
 }
 
-h1 {
-  text-align: center;
-
-}
-
 .start-and-finish {
   display: flex;
   /* flex-direction: row;
@@ -60,7 +65,7 @@ h1 {
 }
 
 button {
-  border: 1px solid var(--blue-1);
+  border: 1px solid var(--blue-2);
   border-radius: 8px;
   padding: 4px 8px;
   font-weight: bold;
@@ -73,16 +78,16 @@ button:hover:not(:disabled) {
 }
 
 button:hover {
-  background: var(--blue-2);
+  background: var(--blue-3);
 }
 
 button:active {
-  background: var(--blue-1);
+  background: var(--blue-2);
   color: white;
 }
 
 button:focus {
-  outline: 1px solid var(--blue-1);
+  outline: 1px solid var(--blue-2);
 }
 
 .page-input {
@@ -113,11 +118,11 @@ button:focus {
 
 .text-input-and-icon input {
   border-radius: 20px;
-  border: 1px solid var(--blue-1);
+  border: 1px solid var(--blue-2);
 }
 
 .text-input-and-icon input:focus {
-  outline: 1px solid var(--blue-1);
+  outline: 1px solid var(--blue-2);
 }
 
 .text-input-and-icon button {
@@ -159,4 +164,89 @@ button:disabled,
 
 .search-buttons button {
   min-width: 10em;
+  margin: 1em 0;
+}
+
+.info-box {
+  border: 1px solid black;
+  margin: 16px;
+}
+
+.info-box header h4 {
+  margin: 0;
+  padding: 0;
+}
+
+.info-box header {
+  display: block;
+  background: var(--blue-3);
+  padding: 8px 8px;
+}
+
+.info-box content {
+  display: block;
+  padding: 0 8px;
+}
+
+#path-found,
+#path-not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.path-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.path-list .row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.path-list span.index {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  border-radius: 32px;
+  background: black;
+  color: white;
+  text-align: center;
+  margin-right: 8px;
+  z-index: 1;
+}
+
+.path-list .row .page a {
+  font-size: 125%;
+}
+
+.path-list .link {
+  height: 48px;
+  background: black;
+  width: 8px;
+  margin-left: 12px;
+  margin-top: -16px;
+  margin-bottom: -16px;
+}
+
+.path-list .link-missing {
+  height: 64px;  /* not sure why this is necessary... */
+  margin-top: -8px;
+  margin-bottom: -8px;
+}
+
+#corpus-info table th {
+  text-align: left;
+  padding-right: 1em;
+}
+
+#corpus-graph {
+  font: 12px "Courier New", monospace;
+}
+
+#corpus-pages, #corpus-links {
+  text-align: right;
 }
