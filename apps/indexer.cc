@@ -57,6 +57,7 @@ std::unique_ptr<MetadataWriter> metadata_writer;
 
 //  Possible link forms:
 //    [[Target]]
+//    [[target]]  (links to Target but renders as "target")
 //    [[Prefix:Target]]
 //    [[Prefix:Target#anchor]]
 //    [[#internal]]
@@ -67,6 +68,7 @@ std::unique_ptr<MetadataWriter> metadata_writer;
 //
 //  Details:
 //    https://www.mediawiki.org/wiki/Help:Links
+//    https://en.wikipedia.org/wiki/Help:Link
 //    https://en.wikipedia.org/wiki/Help:Pipe_trick
 //    https://en.wikipedia.org/wiki/Help:Colon_trick
 Link ParseLink(std::string_view text) {
@@ -76,6 +78,9 @@ Link ParseLink(std::string_view text) {
     std::string_view target_with_anchor = text.substr(0, pipe_pos);
     std::string_view::size_type hash_pos = target_with_anchor.find('#');
     link.target = target_with_anchor.substr(0, hash_pos);
+    if (!link.target.empty() && islower(link.target.front())) {
+        link.target.front() = toupper(link.target.front());
+    }
     if (hash_pos != std::string_view::npos) {
         link.anchor = target_with_anchor.substr(hash_pos + 1);
     }
