@@ -46,8 +46,8 @@
         </div>
 
         <div class="search-buttons">
-          <button id="search-button" type="button" disabled>Search!</button>
-          <button id="surprise-me-button" type="button" disabled>Surprise me!</button>
+          <button id="search-button" type="button" disabled>Search</button>
+          <button id="surprise-me-button" type="button" disabled>Surprise me</button>
         </div>
       </div>
 
@@ -72,20 +72,46 @@
         </div>
       </div>
 
-      <div id="search-error" style="display:none">
-        <h2>Search error!</h2>
-        <div id="search-error-message"></div>
+      <div id="error" class="info-box error" style="display:none">
+        <header>
+          <div id="error-close">✖</div>
+          <h4 id="error-title"></h4>
+        </header>
+        <content><p id="error-message"></p></content>
       </div>
     </main>
 
     <footer>
+      <div class="info-box" id="search-stats" style="display:none">
+        <header><h4>Last search statistics</h4></header>
+        <content>
+          <table>
+            <tr>
+              <th>Vertices reached:</th>
+              <td id="vertices-reached">unknown</td>
+            </tr>
+            <tr>
+              <th>Vertices expanded:</th>
+              <td id="vertices-expanded">unknown</td>
+            </tr>
+            <tr>
+              <th>Edges expanded:</th>
+              <td id="edges-expanded">unknown</td>
+            </tr>
+            <tr>
+              <th>Time taken:</th>
+              <td id="time-taken"><span id="time-taken-ms">unknown</span> ms</td>
+            </tr>
+          </table>
+        </content>
+      </div>
       <div class="info-box" id="corpus-info" style="display:none">
         <header><h4>Corpus information</h4></header>
         <content>
           <table>
             <tr>
               <th>Graph filename:</th>
-              <td id="corpus-graph">unknown.graph</td>
+              <td id="corpus-graph" style="overflow-wrap: anywhere">unknown.graph</td>
             </tr>
             <tr>
               <th>Page count:</th>
@@ -102,7 +128,7 @@
         <header><h4>Source code</h4></header>
         <content>
           <p>
-            <a href="https://github.com/maksverver/WikipediaGraphSearch" target="_blank">https://github.com/maksverver/WikipediaGraphSearch</a>
+            <a href="https://github.com/maksverver/WikipediaGraphSearch" target="_blank">https://github.com/<wbr>maksverver/<wbr>WikipediaGraphSearch/</a>
           </p>
         </content>
       </div>

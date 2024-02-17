@@ -4,6 +4,8 @@
 const hashParams = new URLSearchParams(document.location.hash.substring(1));
 const enableDebug = hashParams.get('debug') > 0;
 
+const formatNumber = Intl.NumberFormat('en-US').format;
+
 function addDelay(func, minDelay, maxDelay) {
   return async function(...args) {
     const delay = minDelay + Math.random() * (maxDelay - minDelay);
@@ -14,9 +16,16 @@ function addDelay(func, minDelay, maxDelay) {
 
 if (enableDebug) fetch = addDelay(fetch, 250, 750);
 
+async function fetchJson(url) {
+  const response = await fetch(url);
+  if (response.headers.get('Content-Type') === 'application/json') {
+    return await response.json();
+  }
+  throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+}
+
 async function fetchPageByRef(ref) {
-  const response = await fetch(`api/page?page=${encodeURIComponent(ref)}`);
-  return await response.json();
+  return await fetchJson(`api/page?page=${encodeURIComponent(ref)}`)
 }
 
 class PageInput {
@@ -27,6 +36,7 @@ class PageInput {
     this.onEnabledChanged = onEnabledChanged;
     this.error = null;
     randomizeButton.onclick = this.randomize.bind(this);
+    titleElem.onfocus = titleElem.onchange = this.clearError.bind(this);
   }
 
   setEnabled(enabled) {
@@ -38,9 +48,13 @@ class PageInput {
     return true;
   }
 
+  clearError() {
+    this.setError(null);
+  }
+
   setError(message) {
     this.error = message;
-    this.titleElem.classList.toggle('error', message);
+    this.titleElem.classList.toggle('error', Boolean(message));
   }
 
   getTitle() {
@@ -48,7 +62,10 @@ class PageInput {
   }
 
   setTitle(title) {
-    this.titleElem.value = title;
+    if (this.titleElem.value != title) {
+      this.titleElem.value = title;
+      this.clearError();
+    }
   }
 
   async randomize() {
@@ -57,6 +74,9 @@ class PageInput {
       const json = await fetchPageByRef('?');
       const title = json?.page?.title;
       if (title) this.setTitle(title);
+    } catch (e) {
+      console.error('Failed to fetch page info', e);
+      this.showError('Failed to fetch page info', e.message);
     } finally {
       this.setEnabled(true);
     }
@@ -103,6 +123,7 @@ class App {
     this.loadCorpusInfo();
     this.startPageInput.randomize();
     this.finishPageInput.randomize();
+    document.getElementById('error-close').onclick = this.hideError.bind(this);
   }
 
   updateSearchEnabled() {
@@ -112,24 +133,35 @@ class App {
       this.finishPageInput.enabled);
   }
 
+  hideError() {
+    document.getElementById('error').style.display = 'none';
+  }
+
+  showError(title, message) {
+    const errorDiv = document.getElementById('error');
+    document.getElementById('error-title').textContent = title || '';
+    document.getElementById('error-message').textContent = message || '';
+    errorDiv.style.display = null;
+  }
+
   async loadCorpusInfo() {
-    const response = await fetch('api/corpus');
-    const json = await response.json();
-    const graph_filename = json?.corpus?.graph_filename;
-    const vertex_count = json?.corpus?.vertex_count;
-    const edge_count = json?.corpus?.edge_count;
-    if (typeof graph_filename === 'string' &&
-        typeof vertex_count === 'number' &&
-        typeof edge_count === 'number') {
-      const formatNumber = Intl.NumberFormat('en-US').format;
-      document.getElementById('corpus-graph').textContent = graph_filename;
-      document.getElementById('corpus-pages').textContent = formatNumber(vertex_count - 1);
-      document.getElementById('corpus-links').textContent = formatNumber(edge_count);
+    try {
+      const json = await fetchJson('api/corpus');
+      const graph_filename = json?.corpus?.graph_filename;
+      const vertex_count = json?.corpus?.vertex_count;
+      const edge_count = json?.corpus?.edge_count;
+      document.getElementById('corpus-graph').textContent =
+          typeof graph_filename === 'string' ? graph_filename : '';
+      document.getElementById('corpus-pages').textContent =
+          typeof vertex_count === 'number' ? formatNumber(vertex_count - 1) : '';
+      document.getElementById('corpus-links').textContent =
+          typeof edge_count === 'number' ? formatNumber(edge_count) : '';
       document.getElementById('corpus-info').style.display = null;
       const base_url = json?.corpus?.base_url;
-      if (typeof(base_url) === 'string') this.wikipediaBaseUrl = base_url
-    } else {
-      console.warn('Invalid corpus info:', json);
+      if (typeof(base_url) === 'string') this.wikipediaBaseUrl = base_url;
+    } catch (e) {
+      console.error('Failed to fetch corpus info', e);
+      this.showError('Failed to fetch corpus info', e.message);
     }
   }
 
@@ -147,29 +179,36 @@ class App {
     this.searchInProgress = true;
     this.updateSearchEnabled();
     try {
-      const response = await fetch(`api/shortest-path?start=${encodeURIComponent(start)}&finish=${encodeURIComponent(finish)}`);
-      const json = await response.json();
+      const pathFoundElem = document.getElementById('path-found');
+      const pageNotfoundElem = document.getElementById('path-not-found');
+      const searchStatsElem = document.getElementById('search-stats');
+      pathFoundElem.style.display = 'none';
+      pageNotfoundElem.style.display = 'none';
+      searchStatsElem.style.display = 'none';
+      this.hideError();
+
+      const json = await fetchJson(`api/shortest-path?start=${encodeURIComponent(start)}&finish=${encodeURIComponent(finish)}`);
 
       const startTitle = json?.start?.page?.title;
+      const startErrorMessage = json?.start?.error?.message;
       if (startTitle) {
         this.startPageInput.setTitle(startTitle);
-      } else {
-        // TODO: show error
+      } else if (typeof startErrorMessage === 'string') {
+        this.startPageInput.setError(startErrorMessage);
       }
 
       const finishTitle = json?.finish?.page?.title;
+      const finishErrorMessage = json?.finish?.error?.message;
       if (finishTitle) {
         this.finishPageInput.setTitle(finishTitle);
       } else {
-        // TODO: show error
+        this.finishPageInput.setError(finishErrorMessage);
       }
 
-      const pathFoundElem = document.getElementById('path-found');
-      const pageNotfoundElem = document.getElementById('path-not-found');
-      const searchErrorElem = document.getElementById('search-error');
-      pathFoundElem.style.display = 'none';
-      pageNotfoundElem.style.display = 'none';
-      searchErrorElem.style.display = 'none';
+      if (json?.error) {
+        this.showError('Search failed', json?.error?.message);
+        return;
+      }
 
       const makePageSpan = (json) => {
         const pageSpan = document.createElement('span');
@@ -228,10 +267,21 @@ class App {
           replaceElemById('path-not-found-start', makePageSpan(json?.start));
           replaceElemById('path-not-found-finish', makePageSpan(json?.finish));
         }
+        if (json?.stats) {
+          searchStatsElem.style.display = null;
+          const stats = json.stats;
+          document.getElementById('vertices-reached').textContent = formatNumber(stats.vertices_reached);
+          document.getElementById('vertices-expanded').textContent = formatNumber(stats.vertices_expanded);
+          document.getElementById('edges-expanded').textContent = formatNumber(stats.edges_expanded);
+          document.getElementById('time-taken-ms').textContent = formatNumber(stats.time_taken_ms);
+        }
       } else {
         document.getElementById('search-error-message').textContent = json?.error?.message ?? 'Missing error!';
         searchErrorElem.style.display = null;
       }
+    } catch (e) {
+      console.error('Search failed', e);
+      this.showError('Search failed', e.message);
     } finally {
       this.searchInProgress = false;
       this.updateSearchEnabled();

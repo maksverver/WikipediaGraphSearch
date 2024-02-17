@@ -14,6 +14,10 @@
   font: 14px Verdana, Arial, sans-serif;
 }
 
+h1, h2, h3, h4 {
+  text-align: center;
+}
+
 a, a:visited {
   color: var(--blue-1);
   text-decoration: none;
@@ -28,9 +32,6 @@ html, body {
   margin: 0;
   padding: 0;
   /*background: var(--grey-4);*/
-  display: flex;
-  flex-direction: column;
-  align-items: center;
 }
 
 input.error {
@@ -41,7 +42,7 @@ input.error {
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 100%;
+  height: 100svh;
   background: white;
 }
 
@@ -178,13 +179,18 @@ button:disabled,
 }
 
 .info-box header {
-  display: block;
   background: var(--blue-3);
   padding: 8px 8px;
+  text-align: center;
 }
 
-.info-box content {
-  display: block;
+.info-box.error header {
+  background: var(--red-1);
+  color: white;
+}
+
+.info-box content p,
+.info-box content table {
   padding: 0 8px;
 }
 
@@ -238,7 +244,13 @@ button:disabled,
   margin-bottom: -8px;
 }
 
-#corpus-info table th {
+#corpus-info table,
+#search-stats table {
+  width: 100%
+}
+
+#corpus-info table th,
+#search-stats table th {
   text-align: left;
   padding-right: 1em;
 }
@@ -247,6 +259,12 @@ button:disabled,
   font: 12px "Courier New", monospace;
 }
 
-#corpus-pages, #corpus-links {
+#corpus-pages, #corpus-links,
+#vertices-reached, #vertices-expanded, #edges-expanded, #time-taken {
   text-align: right;
+}
+
+#error-close {
+  cursor: pointer;
+  float: right;
 }
