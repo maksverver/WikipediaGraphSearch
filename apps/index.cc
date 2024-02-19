@@ -55,22 +55,34 @@ std::vector<Edge> edges;
 
 std::unique_ptr<MetadataWriter> metadata_writer;
 
-//  Possible link forms:
+// Parses a link into the target page name and displayed text, discarding the
+// section name (if included).
+//
+// Possible link forms:
+//
 //    [[Target]]
+//    [[Target#anchor]]  (links to a "Target" subsection "anchor")
 //    [[target]]  (links to Target but renders as "target")
 //    [[Prefix:Target]]
-//    [[Prefix:Target#anchor]]
 //    [[#internal]]
 //    [[Target|]]  (empty title renders as "Target")
 //    [[Foo:Bar (Quux)|]]   (renders as "Bar)
 //    [[:Foo]]   (renders as "Foo")
 //    [[:Foo:Bar]]   (renders as "Foo:Bar")
 //
+// There is also something called the “inverse pipe trick”: on a page like
+// "Foo (bar)" the link"[[|baz]]" would render as "baz" but link to page
+// "Baz (bar)". This is extremely rarely used, and not currently supported by
+// the indexer. (Currently these links are ignored, because the caller discards
+// links with empty target; note that this also includes anchor-based links to
+// sections of the current page like "[[#foo]]", which are much more common.)
+//
 //  Details:
 //    https://www.mediawiki.org/wiki/Help:Links
 //    https://en.wikipedia.org/wiki/Help:Link
 //    https://en.wikipedia.org/wiki/Help:Pipe_trick
 //    https://en.wikipedia.org/wiki/Help:Colon_trick
+//
 Link ParseLink(std::string_view text) {
     if (text.starts_with(':')) text.remove_prefix(1);
     Link link;
