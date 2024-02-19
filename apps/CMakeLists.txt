@@ -1,7 +1,7 @@
 include_directories(../include)
 
-add_executable(indexer indexer.cc)
-target_link_libraries(indexer PRIVATE parsing writing)
+add_executable(index index.cc)
+target_link_libraries(index PRIVATE parsing writing)
 
 add_executable(inspect inspect.cc)
 target_link_libraries(inspect PRIVATE reading)
