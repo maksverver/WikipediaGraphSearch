@@ -46,3 +46,52 @@ These optimizations are currently not implemented because benchmarks are needed
 to see if the performance improvements justify the increased complexity.
 Additionally, the ideal threshold for switching (1% in the example above) may
 depend on the shape of the graph.
+
+
+Various other improvements
+--------------------------
+
+  - Python module: improve exception message when the graph is not found.
+    Currently it looks like this:
+
+        >>> import wikipath
+        >>> r = wikipath.Reader('nonexistent')
+        Could not open graph file [nonexistent]
+        Traceback (most recent call last):
+          File "<stdin>", line 1, in <module>
+        TypeError: pybind11::init(): factory function returned nullptr
+
+    which is a bit obscure. This might require refactoring src/reader.cc to
+    return an error message instead of printing it to directly to std::cerr,
+    or maybe I could just handle the most common failure case (file does not
+    exist) upfromt with a call to std::filesystem::exists().
+
+  - CMake: auto-generate contents of testdata/example.{graph, metadata} from
+    example.xml.
+
+    This would require first building the indexer to be able to generate the
+    derived files. Not sure it's worth the trouble, since the derived files only
+    need to be regenerated when either the graph/metadata file formats or the
+    test data changes, and none of these change frequently.
+
+  - Extract wikipedia base url from the XML dump, which contains:
+
+    <siteinfo>
+      <base>https://en.wikipedia.org/wiki/Main_Page</base>
+    </siteinfo>
+
+    This would require adding a table for site info to the metadata database.
+    This could replace the --wiki_base_url argument for the http-server.py.
+
+  - Automatically normalize article titles by replacing underscores with spaces?
+    This would allow users to enter "Main_Page" instead of "Main Page".
+
+    Taking this further, maybe we could decode and accept an entire Wikipedia
+    URL like https://en.wikipedia.org/wiki/Main_Page?
+
+  - http-server.py: return cache headers.
+
+    Most results can be safely cached either indefinitely or based on the
+    modification time of the graph/metadata files, except when requesting a
+    random page (i.e. one of the query parameters is '?'), in which case the
+    response is always different.
