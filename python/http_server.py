@@ -21,7 +21,7 @@ class ClientError(Exception):
         self.status = status
 
 
-def Serve(*, graph_filename, host, port, docroot, wiki_base_url):
+def Serve(*, graph_filename, host, port, docroot, wiki_base_url, thread_daemon=None):
     '''Runs the webserver.
 
     `docroot` is the directory from which static content is served. Careful!
@@ -218,10 +218,18 @@ def Serve(*, graph_filename, host, port, docroot, wiki_base_url):
 
     print(f'Starting server at {host}:{port}', file=sys.stderr)
     server = Server((host, port), RequestHandler)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        server.shutdown()
+    if thread_daemon is None:
+        # Run in the foreground
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            server.shutdown()
+    else:
+        # Run on a background thread
+        from threading import Thread
+        thread = Thread(target=server.serve_forever, daemon=thread_daemon)
+        thread.start()
+        return thread
 
 
 def Main():

@@ -94,16 +94,16 @@ Response if start and/or finish pages are not found:
 {
   "start": {
     "error": {
-      "message": "Page not found"
+      "message": "Page not found."
     }
   },
   "finish": {
     "error": {
-      "message": "Page not found"
+      "message": "Page not found."
     }
   },
   "error": {
-    "message": "Page not found",
+    "message": "Page not found.",
   }
 }
 
