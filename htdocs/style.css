@@ -11,7 +11,14 @@
   --grey-3: #ccc;
   --grey-4: #ddd;
 
+  /* keep this in sync with pathAnimationDuration in app.js */
+  --path-animation-duration: 0.5s;
+
   font: 14px Verdana, Arial, sans-serif;
+}
+
+h1 {
+  font-size: 24px;
 }
 
 h1, h2, h3, h4 {
@@ -36,6 +43,7 @@ html, body {
 
 input.error {
   background: var(--red-3);
+  transition: background 0.25s;
 }
 
 .content {
@@ -168,6 +176,11 @@ button:disabled,
   margin: 1em 0;
 }
 
+.animation-control {
+  text-align: center;
+  padding-top: 4px;
+}
+
 .info-box {
   border: 1px solid black;
   margin: 16px;
@@ -236,6 +249,50 @@ button:disabled,
   margin-left: 12px;
   margin-top: -16px;
   margin-bottom: -16px;
+}
+
+.path-list .link.animated {
+  animation-name: path-list-link-animation;
+  animation-timing-function: linear;
+  animation-duration: var(--path-animation-duration);
+  animation-fill-mode: both;
+}
+
+@keyframes path-list-link-animation {
+  0% {
+    height: 0px;
+  }
+  100% {
+    height: 48px;
+  }
+}
+
+.path-list .row .index.animated {
+  opacity: 0%;
+  animation-name: path-list-row-index-animation;
+  animation-duration: var(--path-animation-duration);
+  animation-fill-mode: forwards;
+}
+
+@keyframes path-list-row-index-animation {
+  0%, 100% {
+    opacity: 100%;
+  }
+}
+
+.path-list .row .page.animated {
+  animation-name: path-list-row-page-animation;
+  animation-duration: var(--path-animation-duration);
+  animation-fill-mode: both;
+}
+
+@keyframes path-list-row-page-animation {
+  0%, 50% {
+    opacity: 0%;
+  }
+  100% {
+    opacity: 100%;
+  }
 }
 
 .path-list .link-missing {

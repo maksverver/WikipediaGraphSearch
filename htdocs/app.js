@@ -4,6 +4,9 @@
 const hashParams = new URLSearchParams(document.location.hash.substring(1));
 const enableDebug = hashParams.get('debug') > 0;
 
+// Keep this in sync with --path-animation-duration in style.css
+const pathAnimationDuration = 0.5;
+
 const formatNumber = Intl.NumberFormat('en-US').format;
 
 function addDelay(func, minDelay, maxDelay) {
@@ -242,6 +245,7 @@ class App {
       }
 
       const path = json?.path;
+      const animate = document.getElementById('animation-checkbox').checked;
       if (Array.isArray(path)) {
         if (path.length > 0) {
           pathFoundElem.style.display = null;
@@ -249,9 +253,13 @@ class App {
           pathListElem.replaceChildren();
           for (var i = 0; i < path.length; ++i) {
             if (i > 0) {
-                const linkDiv = document.createElement('div');
-                linkDiv.className = 'link';
-                pathListElem.appendChild(linkDiv);
+              const linkDiv = document.createElement('div');
+              linkDiv.className = 'link';
+              if (animate) {
+                linkDiv.classList.add('animated');
+                linkDiv.style.animationDelay = `${pathAnimationDuration * (i - 1)}s`;
+              }
+              pathListElem.appendChild(linkDiv);
             }
             const rowDiv = document.createElement('div');
             rowDiv.className = 'row';
@@ -259,7 +267,15 @@ class App {
             indexSpan.className = 'index';
             indexSpan.appendChild(document.createTextNode(String(i + 1)));
             rowDiv.appendChild(indexSpan);
-            rowDiv.appendChild(makePageSpan(path[i]));
+            const pageSpan = makePageSpan(path[i]);
+            rowDiv.appendChild(pageSpan);
+            if (animate && i > 0) {
+              indexSpan.classList.add('animated');
+              indexSpan.style.animationDelay = `${pathAnimationDuration * (i - 1)}s`;
+              indexSpan.style.zIndex = path.length - i;
+              pageSpan.classList.add('animated');
+              pageSpan.style.animationDelay = `${pathAnimationDuration * (i - 1)}s`;
+            }
             pathListElem.appendChild(rowDiv);
           }
         } else {
