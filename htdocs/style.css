@@ -211,7 +211,22 @@ button:disabled,
 
 .info-box.error header {
   background: var(--red-1);
+  display: flex;
+  flex-direction: row;
+}
+
+#error-title, #error-close {
   color: white;
+}
+
+#error-title {
+  flex-grow: 1;
+}
+
+#error-close {
+  margin: 0;
+  border: none;
+  background: none;
 }
 
 .info-box content p,
@@ -331,9 +346,4 @@ button:disabled,
 #corpus-pages, #corpus-links,
 #vertices-reached, #vertices-expanded, #edges-expanded, #time-taken {
   text-align: right;
-}
-
-#error-close {
-  cursor: pointer;
-  float: right;
 }

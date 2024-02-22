@@ -32,11 +32,12 @@ async function fetchPageByRef(ref) {
 }
 
 class PageInput {
-  constructor(titleElem, randomizeButton, enabled, onEnabledChanged) {
+  constructor(titleElem, randomizeButton, enabled, onEnabledChanged, onError) {
     this.titleElem = titleElem;
     this.randomizeButton = randomizeButton;
     this.enabled = enabled;
     this.onEnabledChanged = onEnabledChanged;
+    this.onError = onError;
     this.error = null;
     randomizeButton.onclick = this.randomize.bind(this);
     titleElem.onfocus = titleElem.onchange = this.clearError.bind(this);
@@ -78,10 +79,10 @@ class PageInput {
       const title = json?.page?.title;
       if (title) this.setTitle(title);
     } catch (e) {
-      console.error('Failed to fetch page info', e);
-      this.showError('Failed to fetch page info', e.message);
+      this.onError('Failed to fetch page info', e);
     } finally {
       this.setEnabled(true);
+      this.titleElem.focus();
     }
   }
 }
@@ -110,12 +111,14 @@ class App {
       document.getElementById('start-page-randomize-button'),
       /* enabled= */ false,
       this.updateSearchEnabled.bind(this),
+      this.handleError.bind(this),
     );
     this.finishPageInput = new PageInput(
       document.getElementById('finish-page-title-text'),
       document.getElementById('finish-page-randomize-button'),
       /* enabled= */ false,
       this.updateSearchEnabled.bind(this),
+      this.handleError.bind(this),
     );
     const searchButton = document.getElementById('search-button');
     const surpriseMeButton = document.getElementById('surprise-me-button');
@@ -138,6 +141,11 @@ class App {
 
   hideError() {
     document.getElementById('error').style.display = 'none';
+  }
+
+  handleError(title, exception) {
+    console.warn(title, exception);
+    this.showError(title, exception.message);
   }
 
   showError(title, message) {
@@ -163,19 +171,20 @@ class App {
       const base_url = json?.corpus?.base_url;
       if (typeof(base_url) === 'string') this.wikipediaBaseUrl = base_url;
     } catch (e) {
-      console.error('Failed to fetch corpus info', e);
-      this.showError('Failed to fetch corpus info', e.message);
+      this.handleError('Failed to fetch corpus info', e);
     }
   }
 
   async handleSearchClick() {
     const start = this.startPageInput.getTitle();
     const finish = this.finishPageInput.getTitle();
-    return await this.search(start, finish);
+    await this.search(start, finish);
+    this.searchButtons.searchButton.focus();
   }
 
   async handleSurpriseMeClick() {
-    return await this.search('?', '?');
+    await this.search('?', '?');
+    this.searchButtons.surpriseMeButton.focus();
   }
 
   async search(start, finish) {
@@ -209,7 +218,7 @@ class App {
       }
 
       if (json?.error) {
-        this.showError('Search failed', json?.error?.message);
+        this.handleError('Search failed', new Error(json?.error?.message));
         return;
       }
 
@@ -296,8 +305,7 @@ class App {
         searchErrorElem.style.display = null;
       }
     } catch (e) {
-      console.error('Search failed', e);
-      this.showError('Search failed', e.message);
+      this.handleError('Search failed', e);
     } finally {
       this.searchInProgress = false;
       this.updateSearchEnabled();
