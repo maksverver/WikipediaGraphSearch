@@ -9,8 +9,6 @@ target_link_libraries(inspect PRIVATE reading)
 add_executable(search search.cc)
 target_link_libraries(search PRIVATE reading searching)
 
-message(Wt=${Wt_FOUND})
-
 if (Wt_FOUND)
   add_executable(websearch websearch.cc)
   target_link_libraries(websearch PRIVATE reading searching Wt::Wt Wt::HTTP)

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12...3.28)
 
 project(
   WikipediaGraphSearch
-  VERSION 0.0.1
+  VERSION 0.2.0
   DESCRIPTION "Wikipedia shortest path search tool"
   LANGUAGES CXX
 )
