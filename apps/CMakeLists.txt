@@ -9,9 +9,11 @@ target_link_libraries(inspect PRIVATE reading)
 add_executable(search search.cc)
 target_link_libraries(search PRIVATE reading searching)
 
-if (WT AND WTHTTP)
+message(Wt=${Wt_FOUND})
+
+if (Wt_FOUND)
   add_executable(websearch websearch.cc)
-  target_link_libraries(websearch PRIVATE reading searching wt wthttp)
+  target_link_libraries(websearch PRIVATE reading searching Wt::Wt Wt::HTTP)
 endif ()
 
 if (LIBXML2_FOUND)

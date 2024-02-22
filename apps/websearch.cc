@@ -204,7 +204,7 @@ void SearchApplication::Search() {
         index_t prev_i = 0;
         for (index_t i : path) {
             std::string title = reader.PageTitle(i);
-            std::string text = prev_i != 0 ? reader.LinkText(prev_i, i) : title;
+            std::string text = prev_i != 0 ? reader.LinkText(prev_i, i).value_or("unknown") : title;
             Wt::WTemplate *stepTemplate = nullptr;
             if (title == text) {
                 // Note: I'm using a template widget here, because adding a WAnchor widget directly

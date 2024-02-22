@@ -17,6 +17,8 @@ pkg_check_modules(LIBXML2 libxml-2.0)
 find_package(Python COMPONENTS Interpreter Development.Module)
 find_package(pybind11 CONFIG)
 
+find_package(Wt COMPONENTS Wt HTTP)
+
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release)
 endif()
