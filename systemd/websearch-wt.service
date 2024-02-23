@@ -1,0 +1,10 @@
+[Unit]
+Description=Wikipedia Shortest Path Search (Wt)
+After=network.target
+
+[Service]
+ExecStart=/usr/lib/wikipath/websearch-wt.sh
+DynamicUser=yes
+
+[Install]
+WantedBy=multi-user.target

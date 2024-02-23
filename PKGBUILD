@@ -23,32 +23,30 @@ check() {
 }
 
 package() {
-    # Graph data should be created (by the user) in /var/lib/wikipath
-    install -d "${pkgdir}/var/lib/wikipath"
-
-    # Binaries and Python scripts are installed un /usr/lib/wikipath
-    install -d "${pkgdir}/usr/lib/wikipath"
-
-    # Python bindings are installed under /usr/lib/python3.XX/site-packages
     local site_packages=$(python -c "import site; print(site.getsitepackages()[0])")
-    install -d "${pkgdir}/${site_packages}"
 
     cd "${_build_dir}/src"
 
-    install -s wikipath.cpython-*.so "${pkgdir}/${site_packages}"
+    install -D -t "${pkgdir}/${site_packages}/" wikipath.*.so
 
     cd "${startdir}/python"
 
-    install http_server.py inspect.py search.py "${pkgdir}/usr/lib/wikipath"
+    install -D -t "${pkgdir}/usr/lib/wikipath" http_server.py inspect.py search.py
 
     cd "${_build_dir}/apps"
 
-    install -s index inspect search websearch xml-stats "${pkgdir}/usr/lib/wikipath"
+    install -D -t "${pkgdir}/usr/lib/wikipath" index inspect search websearch xml-stats
 
     cd "${startdir}"
 
-    # Install systemd service
-    install -d "${pkgdir}/usr/lib/systemd/system"
-    install "websearch.sh" "${pkgdir}/usr/lib/wikipath/"
-    install -m644 "websearch.service" "${pkgdir}/usr/lib/systemd/system/wikipath-websearch.service"
+    install -d "${pkgdir}/usr/share/wikipath"
+    cp -r htdocs "${pkgdir}/usr/share/wikipath/"
+
+    cd "${startdir}/systemd"
+
+    install -D -t "${pkgdir}/usr/lib/wikipath/" websearch-wt.sh websearch-python.sh
+    install -D -m644 websearch-wt.service "${pkgdir}/usr/lib/systemd/system/wikipath-websearch-wt.service"
+    install -D -m644 websearch-python.service "${pkgdir}/usr/lib/systemd/system/wikipath-websearch-python.service"
+
+    install -d "${pkgdir}/var/lib/wikipath"
 }

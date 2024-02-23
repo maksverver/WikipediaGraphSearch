@@ -1,0 +1,10 @@
+[Unit]
+Description=Wikipedia Shortest Path Search (Python)
+After=network.target
+
+[Service]
+ExecStart=/usr/lib/wikipath/websearch-python.sh
+DynamicUser=yes
+
+[Install]
+WantedBy=multi-user.target
