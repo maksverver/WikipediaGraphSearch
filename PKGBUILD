@@ -14,8 +14,8 @@ makedepends=('cmake' 'python' 'pybind11' 'wt')
 _build_dir=${startdir}/build-package
 
 build() {
-    cmake -S "${startdir}" -B "${_build_dir}" -D CMAKE_BUILD_TYPE=Release
-    make -C "${_build_dir}" VERBOSE=1 CPPFLAGS="${CPPFLAGS}" CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+    cmake -S "${startdir}" -B "${_build_dir}" -D CMAKE_BUILD_TYPE=None
+    make -C "${_build_dir}" CPPFLAGS="${CPPFLAGS}" CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
 }
 
 check() {
