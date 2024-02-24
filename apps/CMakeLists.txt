@@ -1,8 +1,5 @@
 include_directories(../include)
 
-add_executable(index index.cc)
-target_link_libraries(index PRIVATE parsing writing)
-
 add_executable(inspect inspect.cc)
 target_link_libraries(inspect PRIVATE reading)
 
@@ -15,6 +12,12 @@ if (Wt_FOUND)
 endif ()
 
 if (LIBXML2_FOUND)
+  add_executable(index index.cc)
+  target_link_libraries(index PRIVATE parsing writing)
+
   add_executable(xml-stats xml-stats.cc)
   target_link_libraries(xml-stats PRIVATE parsing)
 endif ()
+
+install(TARGETS inspect search DESTINATION lib/wikipath/)
+install(TARGETS index websearch xml-stats DESTINATION lib/wikipath/ OPTIONAL)

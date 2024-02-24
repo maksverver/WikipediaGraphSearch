@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12...3.28)
+cmake_minimum_required(VERSION 3.17...3.28)
 
 project(
   WikipediaGraphSearch
@@ -29,6 +29,10 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_compile_options(-Wall -Wextra -Wpedantic)
 
-add_subdirectory(src)
 add_subdirectory(apps)
+add_subdirectory(python)
+add_subdirectory(src)
+add_subdirectory(systemd)
 add_subdirectory(tests)
+
+install(DIRECTORY htdocs DESTINATION share/wikipath/)
