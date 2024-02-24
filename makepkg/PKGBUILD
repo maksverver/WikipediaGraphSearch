@@ -13,18 +13,24 @@ makedepends=('cmake' 'python' 'pybind11' 'wt')
 
 _build_dir=${startdir}/build-package
 
+prepare() {
+    ln -nsf "${startdir}"/.. "${pkgname}-${pkgver}"
+}
+
+# https://wiki.archlinux.org/title/CMake_package_guidelines
 build() {
-    # https://wiki.archlinux.org/title/CMake_package_guidelines
-    cmake -S "${startdir}" -B "${_build_dir}" -D CMAKE_BUILD_TYPE=None -D CMAKE_INSTALL_PREFIX=/usr
-    make -C "${_build_dir}" CPPFLAGS="${CPPFLAGS}" CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}"
+    cmake -B build -S "$pkgname-$pkgver" \
+            -D CMAKE_BUILD_TYPE=None \
+            -D CMAKE_INSTALL_PREFIX=/usr
+    cmake --build build
 }
 
 check() {
-    make -C "${_build_dir}" test
+    ctest --test-dir build --output-on-failure
 }
 
 package() {
-    make -C "${_build_dir}" DESTDIR="${pkgdir}" install
+    DESTDIR=${pkgdir} cmake --install build
 
     # Directory for user-installed Wikipedia graphs:
     install -d "${pkgdir}/var/lib/wikipath"
