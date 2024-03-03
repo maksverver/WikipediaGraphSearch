@@ -4,6 +4,7 @@
 #include "common.h"
 #include "graph-reader.h"
 
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -28,14 +29,32 @@ struct SearchStats {
     }
 };
 
-// Finds a shortest path from `start` to `finish` using bidirectional
+// Finds a single shortest path from `start` to `finish` using bidirectional
 // breadth-first search.
 //
 // Returns the path as vector indices, including start and finish, or an
 // empty vector if no path exists.
 //
-// If `stats` is not null, statistics are written to *stats.
-std::vector<index_t> FindShortestPath(const GraphReader &graph, index_t start, index_t finish, SearchStats *stats);
+// If `stats` is not null, search statistics are written to *stats.
+std::vector<index_t> FindShortestPath(
+    const GraphReader &graph, index_t start, index_t finish, SearchStats *stats);
+
+// Finds all shortest paths from `start` to `finish` using bidirectional
+// breadth-first search, and returns the result as a DAG, represented as a
+// sorted list of (source, destination) pairs where `start` is one of the
+// sources and `finish` is one of the destinations.
+//
+// If no path is found, an empty optional is returned instead. Note that the
+// optional contains an empty vector only if `start` == `finish`.
+//
+// Every path through the DAG from `start` to `finish` has the same length, so
+// the DAG consists of layers corresponding with distances from the start/to the
+// finish, and only edges between consecutive layers are possible.
+//
+// If `stats` is not null, search statistics are written to *stats.
+std::optional<std::vector<std::pair<index_t, index_t>>>
+FindShortestPathDag(
+    const GraphReader &graph, index_t start, index_t finish, SearchStats *stats);
 
 }  // namespace wikipath
 
