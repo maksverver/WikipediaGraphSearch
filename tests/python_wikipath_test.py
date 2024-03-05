@@ -168,7 +168,7 @@ class TestReader(unittest.TestCase):
         self.assertEqual(self.reader.link_text(5, 6), 'Violet')
 
     def test__link_text__not_found(self):
-        self.assertEqual(self.reader.link_text(1, 4), None)
+        self.assertEqual(self.reader.link_text(1, 4), 'unknown')
 
     def test__forward_link_ref(self):
         self.assertEqual(self.reader.forward_link_ref(4, 1), '#1 (Red)')

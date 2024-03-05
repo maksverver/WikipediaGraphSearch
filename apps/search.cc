@@ -141,7 +141,7 @@ void PrintDot(Reader &reader, const std::vector<std::pair<index_t, index_t>> &da
     for (auto [v, w] : dag) {
         add_vertex(v);
         const auto &dest_title = add_vertex(w);
-        const std::string text = reader.LinkText(v, w).value_or("unknown");
+        const std::string text = reader.LinkText(v, w);
         std::cout << v << " -> " << w;
         if (text != dest_title) std::cout << " [label=" << DotQuotedString(text) << "]";
         std::cout << ";\n";

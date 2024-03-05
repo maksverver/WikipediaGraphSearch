@@ -150,24 +150,23 @@ std::string Reader::PageRef(index_t id) const {
     return wikipath::PageRef(id, PageTitle(id));
 }
 
-std::optional<std::string> Reader::LinkText(index_t from_page_id, index_t to_page_id) const {
+std::string Reader::LinkText(index_t from_page_id, index_t to_page_id) const {
     std::optional<MetadataReader::Link> link = metadata->GetLink(from_page_id, to_page_id);
-    if (!link) return {};
+    if (!link) return "unknown";
     if (link->title && !link->title->empty()) return *link->title;   // [[Foo|Bar]] -> "Bar"
-    std::optional<MetadataReader::Page> target_page = metadata->GetPageById(to_page_id);
-    if (!target_page) return {};
-    if (!link->title) return target_page->title;  // [[Foo]] -> "Foo"
+    std::string target_title = PageTitle(to_page_id);
+    if (!link->title) return target_title;  // [[Foo]] -> "Foo"
     assert(link->title->empty());
-    return std::string(ResolvePipeTrick(target_page->title));  // [[cat:Foo (bar)]] -> "Foo"
+    return std::string(ResolvePipeTrick(target_title));  // [[cat:Foo (bar)]] -> "Foo"
 }
 
 std::string Reader::ForwardLinkRef(index_t from_page_id, index_t to_page_id) const {
-    return wikipath::ForwardLinkRef(to_page_id, PageTitle(to_page_id), LinkText(from_page_id, to_page_id).value_or("unknown"));
+    return wikipath::ForwardLinkRef(to_page_id, PageTitle(to_page_id), LinkText(from_page_id, to_page_id));
 }
 
 std::string Reader::BackwardLinkRef(index_t from_page_id, index_t to_page_id) const {
     return wikipath::BackwardLinkRef(from_page_id, PageTitle(from_page_id),
-            PageTitle(to_page_id), LinkText(from_page_id, to_page_id).value_or("unknown"));
+            PageTitle(to_page_id), LinkText(from_page_id, to_page_id));
 }
 
 }  // namespace wikipath

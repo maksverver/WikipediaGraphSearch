@@ -67,8 +67,9 @@ public:
     std::string PageRef(index_t id) const;
 
     // Returns the text how the link to `to_page_id` is displayed on
-    // `from_page_id`, or an empty optional if the link is not found.
-    std::optional<std::string> LinkText(index_t from_page_id, index_t to_page_id) const;
+    // `from_page_id`, or "unknown" if the link is not found, or "untitled" if
+    // the target page is not found.
+    std::string LinkText(index_t from_page_id, index_t to_page_id) const;
 
     // Returns a reference to a target page of the form "#123 (ToTitle)", or
     // "#123 (ToTitle; displayed as Text)" if the target page is linked from the
