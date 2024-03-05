@@ -6,8 +6,25 @@
 #include "metadata-reader.h"
 
 #include <string>
+#include <string_view>
 
 namespace wikipath {
+
+// Returns a page reference of the form "#123 (Title)".
+std::string PageRef(index_t id, std::string_view title);
+
+// Returns a forward link reference of the form "#123 (Title)" or
+// "#123 (Title; displayed as: text)" if to_title != link_text.
+std::string ForwardLinkRef(
+        index_t to_page_id, std::string_view to_title,
+        std::string_view link_text);
+
+// Returns a backward link reference of the form "#123 (Title)" or
+// "#123 (Title; displayed as: text)" if to_title != link_text.
+std::string BackwardLinkRef(
+        index_t from_page_id, std::string_view from_title,
+        std::string_view to_title, std::string_view link_text);
+
 
 // Wrapper around GraphReader and MetadataReader, for tools that need both.
 //

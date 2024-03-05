@@ -32,7 +32,7 @@ std::string StripExtension(std::string s) {
     return s.substr(0, s.rfind('.'));
 }
 
-std::string LinkRef(index_t page_id, const std::string &title, const std::string &link_target, const std::string &link_text) {
+std::string LinkRef(index_t page_id, std::string_view title, std::string_view link_target, std::string_view link_text) {
     std::ostringstream oss;
     oss << '#' << page_id;
     oss << " (" << title;
@@ -44,6 +44,24 @@ std::string LinkRef(index_t page_id, const std::string &title, const std::string
 }
 
 }  // namespace
+
+std::string PageRef(index_t id, std::string_view title) {
+    std::ostringstream oss;
+    oss << '#' << id << " (" << title << ")";
+    return oss.str();
+}
+
+std::string ForwardLinkRef(
+        index_t to_page_id, std::string_view to_title,
+        std::string_view link_text) {
+    return LinkRef(to_page_id, to_title, to_title, link_text);
+}
+
+std::string BackwardLinkRef(
+        index_t from_page_id, std::string_view from_title,
+        std::string_view to_title, std::string_view link_text) {
+    return LinkRef(from_page_id, from_title, to_title, link_text);
+}
 
 std::unique_ptr<Reader> Reader::Open(const char *graph_filename) {
     std::unique_ptr<GraphReader> graph_reader = GraphReader::Open(graph_filename);
@@ -129,9 +147,7 @@ std::string Reader::PageTitle(index_t id) const {
 }
 
 std::string Reader::PageRef(index_t id) const {
-    std::ostringstream oss;
-    oss << '#' << id << " (" << PageTitle(id) << ")";
-    return oss.str();
+    return wikipath::PageRef(id, PageTitle(id));
 }
 
 std::optional<std::string> Reader::LinkText(index_t from_page_id, index_t to_page_id) const {
@@ -146,16 +162,12 @@ std::optional<std::string> Reader::LinkText(index_t from_page_id, index_t to_pag
 }
 
 std::string Reader::ForwardLinkRef(index_t from_page_id, index_t to_page_id) const {
-    const std::string to_title = PageTitle(to_page_id);
-    const std::string text = LinkText(from_page_id, to_page_id).value_or("unknown");
-    return LinkRef(to_page_id, to_title, to_title, text);
+    return wikipath::ForwardLinkRef(to_page_id, PageTitle(to_page_id), LinkText(from_page_id, to_page_id).value_or("unknown"));
 }
 
 std::string Reader::BackwardLinkRef(index_t from_page_id, index_t to_page_id) const {
-    const std::string from_title = PageTitle(from_page_id);
-    const std::string to_title = PageTitle(to_page_id);
-    const std::string text = LinkText(from_page_id, to_page_id).value_or("unknown");
-    return LinkRef(from_page_id, from_title, to_title, text);
+    return wikipath::BackwardLinkRef(from_page_id, PageTitle(from_page_id),
+            PageTitle(to_page_id), LinkText(from_page_id, to_page_id).value_or("unknown"));
 }
 
 }  // namespace wikipath
