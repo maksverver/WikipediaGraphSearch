@@ -1,3 +1,4 @@
+#include "wikipath/annotated-dag.h"
 #include "wikipath/common.h"
 #include "wikipath/reader.h"
 #include "wikipath/searcher.h"
@@ -43,7 +44,6 @@ void DumpSearchStats(const SearchStats stats) {
     std::cerr << "Time taken:        " << stats.time_taken_ms << " ms\n";
 }
 
-
 bool SearchClassic(Reader &reader, index_t start, index_t finish) {
     SearchStats stats;
     std::vector<index_t> path = FindShortestPath(reader.Graph(), start, finish, &stats);
@@ -62,40 +62,25 @@ bool SearchClassic(Reader &reader, index_t start, index_t finish) {
     return true;
 }
 
-index_t Source(const std::pair<index_t, index_t> &edge) { return edge.first; }
-index_t Destination(const std::pair<index_t, index_t> &edge) { return edge.second; }
-
-int64_t CountPaths(const std::vector<std::pair<index_t, index_t>> &dag, index_t start, index_t finish) {
-    std::unordered_map<index_t, int64_t> count_by_vertex;
-    std::vector<index_t> todo;
-    count_by_vertex[start] = 1;
-    todo.push_back(start);
-    for (size_t i = 0; i < todo.size(); ++i) {
-        index_t v = todo[i];
-        for (index_t w :
-                std::ranges::equal_range(dag, v, {}, Source) |
-                std::views::transform(Destination)) {
-            auto &count = count_by_vertex[w];
-            if (count == 0) todo.push_back(w);
-            count += count_by_vertex[v];
+void PrintFirstPath(const AnnotatedDag &dag) {
+    dag.EnumeratePaths([&dag](std::span<const AnnotatedLink*> links) {
+        std::cout << dag.Start()->Ref() << '\n';
+        for (const AnnotatedLink *link : links) {
+            std::cout << link->ForwardRef() << '\n';
         }
-    }
-    return count_by_vertex[finish];
+        return false;  // stop enumerating after first result
+    });
 }
 
-void PrintPath(
-        Reader &reader, const std::vector<std::pair<index_t, index_t>> &dag,
-        index_t start, index_t finish) {
-    index_t v = start;
-    std::cout << reader.PageRef(v) << '\n';
-    while (v != finish) {
-        auto it = std::ranges::lower_bound(dag, v, {}, Source);
-        assert(it != dag.end());
-        assert(it->first == v);
-        index_t w = it->second;
-        std::cout << reader.ForwardLinkRef(v, w) << '\n';
-        v = w;
-    }
+void PrintAllPaths(const AnnotatedDag &dag) {
+    dag.EnumeratePaths([&dag](std::span<const AnnotatedLink*> links) {
+        std::cout << dag.Start()->Ref();
+        for (const AnnotatedLink *link : links) {
+            std::cout << " -> " << link->ForwardRef();
+        }
+        std::cout << '\n';
+        return true;  // enumerate more
+    });
 }
 
 void PrintEdges(Reader &reader, const std::vector<std::pair<index_t, index_t>> &dag) {
@@ -149,40 +134,6 @@ void PrintDot(Reader &reader, const std::vector<std::pair<index_t, index_t>> &da
     std::cout << "}\n";
 }
 
-template <class CallbackT>
-void DfsPaths(
-        const std::vector<std::pair<index_t, index_t>> &dag,
-        index_t v, index_t finish,
-        std::vector<index_t> &path,
-        const CallbackT &callback) {
-    path.push_back(v);
-    if (v == finish) {
-        callback(path);
-    } else {
-        for (index_t w :
-                std::ranges::equal_range(dag, v, {}, Source) |
-                std::views::transform(Destination)) {
-            DfsPaths(dag, w, finish, path, callback);
-        }
-    }
-    path.pop_back();
-}
-
-void PrintPaths(
-        Reader &reader, const std::vector<std::pair<index_t, index_t>> &dag,
-        index_t start, index_t finish) {
-    std::vector<index_t> path;
-    DfsPaths(dag, start, finish, path, [&reader](const std::vector<index_t> &path) {
-        assert(path.size() > 0);
-        std::cout << reader.PageRef(path[0]);
-        for (size_t i = 1; i < path.size(); ++i) {
-            std::cout << " -> " << reader.ForwardLinkRef(path[i - 1], path[i]);
-        }
-        std::cout << '\n';
-    });
-    assert(path.empty());
-}
-
 }  // namespace
 }  // namespace wikipath
 
@@ -209,42 +160,50 @@ bool Main(
     }
 
     SearchStats stats;
-    auto opt_dag = FindShortestPathDag(reader->Graph(), start, finish, &stats);
+    if (auto dag = FindShortestPathDag(reader->Graph(), start, finish, &stats)) {
+        AnnotatedDag annotated_dag(reader.get(), start, finish, *dag);
 
-    switch (output_type) {
-    case DagOutputType::NONE:  // already handled above
-        assert(false);
-        return false;
+        switch (output_type) {
+        case DagOutputType::NONE:  // already handled above
+            assert(false);
+            return false;
 
-    case DagOutputType::COUNT:
-        std::cout << (opt_dag ? CountPaths(*opt_dag, start, finish) : 0) << '\n';
-        break;
+        case DagOutputType::COUNT:
+            std::cout << annotated_dag.CountPaths() << '\n';
+            break;
 
-    case DagOutputType::PATH:
-        if (!opt_dag) {
-            std::cerr << "No path found!\n";
-        } else {
-            PrintPath(*reader, *opt_dag, start, finish);
+        case DagOutputType::PATH:
+            PrintFirstPath(annotated_dag);
+            break;
+
+        case DagOutputType::PATHS:
+            PrintAllPaths(annotated_dag);
+            break;
+
+        case DagOutputType::EDGES:
+            PrintEdges(*reader, *dag);
+            break;
+
+        case DagOutputType::DOT:
+            PrintDot(*reader, *dag);
+            break;
         }
-        break;
+    } else {
+        switch (output_type) {
+        case DagOutputType::COUNT:
+            // For output consistency, output 0 when no path is found.
+            std::cout << 0 << '\n';
+            break;
 
-    case DagOutputType::PATHS:
-        if (opt_dag) PrintPaths(*reader, *opt_dag, start, finish);
-        break;
+        case DagOutputType::PATHS:
+        case DagOutputType::EDGES:
+            // Empty output when no path is found.
+            break;
 
-    case DagOutputType::EDGES:
-        if (opt_dag) PrintEdges(*reader, *opt_dag);
-        break;
-
-    case DagOutputType::DOT:
-        if (!opt_dag) {
+        default:
             std::cerr << "No path found!\n";
-        } else {
-            PrintDot(*reader, *opt_dag);
         }
-        break;
     }
-
     DumpSearchStats(stats);
     return true;
 }

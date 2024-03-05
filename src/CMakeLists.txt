@@ -18,6 +18,7 @@ add_library(writing STATIC
 target_link_libraries(writing PUBLIC common PRIVATE SQLite::SQLite3)
 
 add_library(searching STATIC
+  annotated-dag.cc
   searcher.cc
 )
 target_link_libraries(searching PUBLIC reading)
