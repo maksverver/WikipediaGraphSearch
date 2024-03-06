@@ -5,9 +5,12 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <ranges>
+#include <sstream>
 #include <string_view>
 #include <utility>
 #include <unordered_map>
@@ -72,15 +75,18 @@ void PrintFirstPath(const AnnotatedDag &dag) {
     });
 }
 
-void PrintAllPaths(const AnnotatedDag &dag) {
-    dag.EnumeratePaths([&dag](std::span<const AnnotatedLink*> links) {
+void PrintAllPaths(const AnnotatedDag &dag, int64_t skip, int64_t max) {
+    if (max <= 0) return;
+    if (skip < 0) skip = 0;
+    auto print_path = [&dag, &max](std::span<const AnnotatedLink*> links) {
         std::cout << dag.Start()->Ref();
         for (const AnnotatedLink *link : links) {
             std::cout << " -> " << link->ForwardRef();
         }
         std::cout << '\n';
-        return true;  // enumerate more
-    });
+        return --max > 0;
+    };
+    dag.EnumeratePaths(print_path, skip);
 }
 
 void PrintEdges(Reader &reader, const std::vector<std::pair<index_t, index_t>> &dag) {
@@ -139,23 +145,96 @@ void PrintDot(Reader &reader, const std::vector<std::pair<index_t, index_t>> &da
 
 namespace {
 
-bool Main(
-        DagOutputType output_type,
-        const char *graph_filename,
-        const char *start_arg,
-        const char *finish_arg) {
+bool StripPrefix(std::string_view &sv, std::string_view prefix) {
+    if (!sv.starts_with(prefix)) return false;
+    sv.remove_prefix(prefix.size());
+    return true;
+}
+
+template <class T>
+bool ParseArg(std::string_view sv, T &value) {
+  std::istringstream iss((std::string(sv)));
+  return (iss >> value) && iss.peek() == std::istringstream::traits_type::eof();
+}
+
+struct Options {
+    const char *graph_filename = nullptr;
+    const char *start = nullptr;
+    const char *finish = nullptr;
+    DagOutputType output_type = DagOutputType::NONE;
+    int64_t skip = 0;
+    int64_t max = std::numeric_limits<int64_t>::max();
+
+    bool Parse(int argc, char *argv[]) {
+        if (argc < 4) return false;
+        graph_filename = argv[1];
+        start = argv[2];
+        finish = argv[3];
+        if (argc == 4) return true;
+        if (!ParseDagOutputType(argv[4], output_type)) return false;
+        for (int i = 5; i < argc; ++i) {
+            std::string_view arg(argv[i]);
+            if (output_type == DagOutputType::PATHS && StripPrefix(arg, "--skip=")) {
+                if (!ParseArg(arg, skip)) {
+                    std::cerr << "Failed to parse argument: " << arg << '\n';
+                    return false;
+                }
+            } else if (output_type == DagOutputType::PATHS && StripPrefix(arg, "--max=")) {
+                if (!ParseArg(arg, max)) {
+                    std::cerr << "Failed to parse argument: " << arg << '\n';
+                    return false;
+                }
+            } else {
+                std::cerr << "Unrecognized argument: " << arg << '\n';
+                return false;
+            }
+        }
+        if (skip < 0) {
+            std::cerr << "Invalid value for --skip: " << skip << '\n';
+            return false;
+        }
+        if (max < 0) {
+            std::cerr << "Invalid value for --max: " << max << '\n';
+            return false;
+        }
+        return true;
+    };
+};
+
+void PrintUsage(const char *argv0) {
+    std::cout << "Usage: " << argv0 << " <wiki.graph> <Start|#id|?> <Finish|#id|?> [<dag-output>]\n\n"
+        "If <dag-output> is present, the DAG-based algorithm is used instead of the classic\n"
+        "algorithm. The value of <dag-output> determines what is printed:\n"
+        "\n"
+        "  count    total number of shortest paths\n"
+        "  path     a single shortest path, same as the classic algorithm\n"
+        "  paths    all shortest paths, one per line\n"
+        "  edges    the edges in the DAG, one per line\n"
+        "  dot      the DAG in GraphViz DOT format\n"
+        "\n"
+        "When <dag-output> is \"path\", the following options are available:\n"
+        "\n"
+        "  --skip=<N>   skip the first N paths\n"
+        "  --max=<N>    print at most N paths\n"
+        "\n"
+        "If <dag-output> is missing, then a single shortest path is printed, calculated using\n"
+        "an older algorithm. The output is similar to \"path\", but slightly faster because it\n"
+        "only calculates a single path and not the entire DAG of shortest paths.\n" << std::flush;
+}
+
+bool Main(const Options &options) {
     using namespace wikipath;
 
-    std::unique_ptr<Reader> reader = Reader::Open(graph_filename);
+    std::unique_ptr<Reader> reader = Reader::Open(options.graph_filename);
     if (reader == nullptr) return false;
 
-    index_t start = reader->ParsePageArgument(start_arg);
-    index_t finish = reader->ParsePageArgument(finish_arg);
+    index_t start = reader->ParsePageArgument(options.start);
+    index_t finish = reader->ParsePageArgument(options.finish);
     if (start == 0 || finish == 0) return false;
 
     std::cerr << "Searching shortest path from " << reader->PageRef(start) << " to " << reader->PageRef(finish) << "..." << std::endl;
 
-    if (output_type == DagOutputType::NONE) {
+    if (options.output_type == DagOutputType::NONE) {
         return SearchClassic(*reader, start, finish);
     }
 
@@ -163,7 +242,7 @@ bool Main(
     if (auto dag = FindShortestPathDag(reader->Graph(), start, finish, &stats)) {
         AnnotatedDag annotated_dag(reader.get(), start, finish, *dag);
 
-        switch (output_type) {
+        switch (options.output_type) {
         case DagOutputType::NONE:  // already handled above
             assert(false);
             return false;
@@ -177,7 +256,7 @@ bool Main(
             break;
 
         case DagOutputType::PATHS:
-            PrintAllPaths(annotated_dag);
+            PrintAllPaths(annotated_dag, options.skip, options.max);
             break;
 
         case DagOutputType::EDGES:
@@ -189,7 +268,7 @@ bool Main(
             break;
         }
     } else {
-        switch (output_type) {
+        switch (options.output_type) {
         case DagOutputType::COUNT:
             // For output consistency, output 0 when no path is found.
             std::cout << 0 << '\n';
@@ -212,22 +291,11 @@ bool Main(
 
 // Command line tool to search for shortest path in the Wikipedia graph.
 int main(int argc, char *argv[]) {
-    DagOutputType mode = DagOutputType::NONE;
-    if (!(argc == 4 || (argc == 5 && ParseDagOutputType(argv[4], mode)))) {
-        std::cout << "Usage: " << argv[0] << " <wiki.graph> <Start|#id|?> <Finish|#id|?> [<dag-output>]\n\n"
-            "If <dag-output> is present, the DAG-based algorithm is used instead of the classic\n"
-            "algorithm. The value of <dag-output> determines what is printed:\n"
-            "\n"
-            "  count    total number of shortest paths\n"
-            "  path     a single shortest path, same as the classic algorithm\n"
-            "  paths    all shortest paths, one per line\n"
-            "  edges    the edges in the DAG, one per line\n"
-            "  dot      the DAG in GraphViz DOT format\n"
-            "\n"
-            "If <dag-output> is missing, then a single shortest path is printed, calculated using an older\n"
-            "algorithm. The output is similar to \"path\", but slightly faster because it only calculates a single\n"
-            "path and not the entire DAG of shortest paths.\n" << std::flush;
+    Options args;
+    if (!args.Parse(argc, argv)) {
+        PrintUsage(argv[0]);
         return EXIT_FAILURE;
     }
-    return Main(mode, argv[1], argv[2], argv[3]) ? EXIT_SUCCESS : EXIT_FAILURE;
+
+    return Main(args) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

@@ -106,7 +106,7 @@ public:
     // the case were no paths were found so the callback was never called.
     bool EnumeratePaths(
             const EnumeratePathsCallback &callback,
-            size_t offset = 0) const;
+            int64_t offset = 0) const;
 
     const AnnotatedPage *Start() const { return start; }
     const AnnotatedPage *Finish() const { return finish; }
@@ -115,7 +115,7 @@ private:
     struct EnumeratePathsContext {
         const AnnotatedPage *finish;
         const EnumeratePathsCallback *callback;
-        size_t offset;
+        int64_t offset;
         std::vector<const AnnotatedLink*> links;
 
         bool EnumeratePaths(const AnnotatedPage *page);

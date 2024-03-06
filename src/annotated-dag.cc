@@ -71,7 +71,7 @@ AnnotatedDag::AnnotatedDag(
     }
 }
 
-bool AnnotatedDag::EnumeratePaths(const EnumeratePathsCallback &callback, size_t offset) const {
+bool AnnotatedDag::EnumeratePaths(const EnumeratePathsCallback &callback, int64_t offset) const {
     return EnumeratePathsContext{
         .finish = finish,
         .callback = &callback,
@@ -90,7 +90,7 @@ bool AnnotatedDag::EnumeratePathsContext::EnumeratePaths(const AnnotatedPage *pa
     }
     for (const AnnotatedLink &link : page->Adj()) {
         links.push_back(&link);
-        size_t n;
+        int64_t n;
         if (offset > 0 && (n = link.Dst()->PathCount(finish)) <= offset) {
             offset -= n;
         } else {

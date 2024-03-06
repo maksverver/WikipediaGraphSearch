@@ -56,7 +56,7 @@ straightforward schema which is defined in src/metadata-writer.cc.
 After generating these two files, the xml file can be deleted.
 
 
-RUNNING: search, inspect
+RUNNING: search
 
 The search tool finds a path betweeen two pages, e.g.:
 
@@ -71,6 +71,33 @@ Vertices reached:  46880
 Vertices expanded: 472
 Edges expanded:    72884
 Time taken:        45 ms
+
+
+It's also possible to list all possible paths, one per line:
+
+./search enwiki-20240220-pages-articles.graph "Potthastia" "Love Don't Cost a Thing (song)" paths
+Searching shortest path from #2619974 (Potthastia) to #668382 (Love Don't Cost a Thing (song))...
+#2619974 (Potthastia) -> #31862 (Fly; displayed as: Diptera) -> #4307 (European Union) -> #11218 (Portugal) -> #290683 (MTV Europe Music Awards) -> #668382 (Love Don't Cost a Thing (song); displayed as: Love Don't Cost a Thing)
+#2619974 (Potthastia) -> #31862 (Fly; displayed as: Diptera) -> #13256 (Steven Spielberg) -> #9118 (MTV) -> #477810 (List of Super Bowl halftime shows; displayed as: halftime show) -> #668382 (Love Don't Cost a Thing (song); displayed as: Love Don't Cost a Thing)
+#2619974 (Potthastia) -> #31862 (Fly; displayed as: Diptera) -> #13256 (Steven Spielberg) -> #23693 (Fox Broadcasting Company; displayed as: Fox) -> #7731 (Jennifer Lopez) -> #668382 (Love Don't Cost a Thing (song); displayed as: Love Don't Cost a Thing)
+...
+
+
+Or just the total number of paths:
+
+$ ./search enwiki-20240220-pages-articles.graph "Potthastia" "Love Don't Cost a Thing (song)" count
+Searching shortest path from #2619974 (Potthastia) to #668382 (Love Don't Cost a Thing (song))...
+113
+Vertices reached:  82574
+Vertices expanded: 1669
+Edges expanded:    170005
+Time taken:        52 ms
+
+And a few other options. Run `search` without arguments for a list of all
+output types and associated options.
+
+
+RUNNING: inspect
 
 The inspect tool can be used to identify pages and their links:
 
