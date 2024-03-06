@@ -185,7 +185,8 @@ FindShortestPathDagImpl(const GraphReader &graph, index_t start, index_t finish,
         backward_fringe.push_back(finish);
         stats_collector.VertexReached();
         stats_collector.VertexReached();
-        while (propagate_forward.empty() && propagate_backward.empty()) {
+        bool shortest_path_found = false;
+        while (!shortest_path_found) {
             if (backward_dist - forward_dist < 2) {
                 // This happens when the path length is greater than fits in dist_t.
                 // This shouldn't happen in real-world graphs, where the maximum
@@ -212,7 +213,8 @@ FindShortestPathDagImpl(const GraphReader &graph, index_t start, index_t finish,
                             dist[w] = forward_dist;
                             if (propagate_backward.empty()) new_fringe.push_back(w);
                         } else if (forward_dist < dist[w]) {
-                            // There is a minimum path containing edge v->w.
+                            // There is a shortest path containing edge v->w.
+                            shortest_path_found = true;
                             edges.push_back({v, w});
                             if (!marked[v]) {
                                 marked[v] = true;
@@ -243,7 +245,8 @@ FindShortestPathDagImpl(const GraphReader &graph, index_t start, index_t finish,
                             dist[v] = backward_dist;
                             if (propagate_forward.empty()) new_fringe.push_back(v);
                         } else if (dist[v] < backward_dist) {
-                            // There is a minimum path containing edge v->w.
+                            // There is a shortest path containing edge v->w.
+                            shortest_path_found = true;
                             if (!marked[w]) {
                                 marked[w] = true;
                                 propagate_forward.push_back(w);
