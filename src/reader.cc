@@ -1,6 +1,7 @@
 #include "wikipath/reader.h"
 
 #include "wikipath/pipe-trick.h"
+#include "wikipath/random.h"
 
 #include <assert.h>
 #include <string.h>
@@ -10,23 +11,9 @@
 #include <iostream>
 #include <optional>
 #include <sstream>
-#include <random>
 
 namespace wikipath {
 namespace {
-
-std::mt19937 CreateRng() {
-    unsigned random_data[624];
-    std::random_device source;
-    std::generate(std::begin(random_data), std::end(random_data), std::ref(source));
-    std::seed_seq seed_seq(std::begin(random_data), std::end(random_data));
-    return std::mt19937(seed_seq);
-}
-
-std::mt19937 &Rng() {
-    static std::mt19937 rng = CreateRng();
-    return rng;
-}
 
 std::string StripExtension(std::string s) {
     return s.substr(0, s.rfind('.'));
@@ -90,17 +77,18 @@ index_t Reader::RandomPageId() const {
         std::cerr << "Graph is empty!\n";
         return 0;
     }
-    // To keep things interesting, we only select pages with both one incoming
-    // and one outgoing link. In particular, most redirect pages have no incoming
-    // links, and so they cannot be the destination of a shortest path.
+    // To keep things interesting, we only select pages with both at least one
+    // incoming and one outgoing link. In particular, most disambiguation pages
+    // have no incoming links, and so they cannot be the destination of a
+    // shortest path.
     //
     // Note: we make only 20 attempts to find a suitable page, to keep an upper
     // bound on the time taken by this function.
     index_t result = 0;
     for (int attempt = 0; attempt < 20; ++attempt) {
-        result = std::uniform_int_distribution<index_t>(1, size - 1)(Rng());
-        if (auto edges = graph->ForwardEdges(result); edges.begin() == edges.end()) continue;
-        if (auto edges = graph->BackwardEdges(result); edges.begin() == edges.end()) continue;
+        result = RandInt<index_t>(1, size - 1);
+        if (graph->ForwardEdges(result).empty()) continue;
+        if (graph->BackwardEdges(result).empty()) continue;
         break;
     }
     return result;

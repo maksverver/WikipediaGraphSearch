@@ -7,6 +7,7 @@ add_library(common STATIC
 add_library(reading STATIC
   graph-reader.cc
   metadata-reader.cc
+  random.cc
   reader.cc
 )
 target_link_libraries(reading PUBLIC common PRIVATE SQLite::SQLite3)
