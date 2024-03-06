@@ -1,5 +1,6 @@
 #include "wikipath/annotated-dag.h"
 #include "wikipath/common.h"
+#include "wikipath/random.h"
 #include "wikipath/reader.h"
 #include "wikipath/searcher.h"
 
@@ -65,17 +66,24 @@ bool SearchClassic(Reader &reader, index_t start, index_t finish) {
     return true;
 }
 
-void PrintFirstPath(const AnnotatedDag &dag) {
-    dag.EnumeratePaths([&dag](std::span<const AnnotatedLink*> links) {
+void PrintPath(const AnnotatedDag &dag, bool random) {
+    auto print_path = [&dag](std::span<const AnnotatedLink*> links) {
         std::cout << dag.Start()->Ref() << '\n';
         for (const AnnotatedLink *link : links) {
             std::cout << link->ForwardRef() << '\n';
         }
         return false;  // stop enumerating after first result
-    });
+    };
+    int64_t skip = 0;
+    if (random) {
+        int64_t path_count = dag.CountPaths();
+        skip = RandInt<int64_t>(0, path_count - 1);
+        std::cerr << "Randomly selected path " << skip + 1 << " of " << path_count << ".\n";
+    }
+    dag.EnumeratePaths(print_path, skip);
 }
 
-void PrintAllPaths(const AnnotatedDag &dag, int64_t skip, int64_t max) {
+void PrintPaths(const AnnotatedDag &dag, int64_t skip, int64_t max) {
     if (max <= 0) return;
     if (skip < 0) skip = 0;
     auto print_path = [&dag, &max](std::span<const AnnotatedLink*> links) {
@@ -162,6 +170,7 @@ struct Options {
     const char *start = nullptr;
     const char *finish = nullptr;
     DagOutputType output_type = DagOutputType::NONE;
+    bool random = false;
     int64_t skip = 0;
     int64_t max = std::numeric_limits<int64_t>::max();
 
@@ -174,7 +183,9 @@ struct Options {
         if (!ParseDagOutputType(argv[4], output_type)) return false;
         for (int i = 5; i < argc; ++i) {
             std::string_view arg(argv[i]);
-            if (output_type == DagOutputType::PATHS && StripPrefix(arg, "--skip=")) {
+            if (output_type == DagOutputType::PATH && arg == "--random") {
+                random = true;
+            } else if (output_type == DagOutputType::PATHS && StripPrefix(arg, "--skip=")) {
                 if (!ParseArg(arg, skip)) {
                     std::cerr << "Failed to parse argument: " << arg << '\n';
                     return false;
@@ -214,12 +225,17 @@ void PrintUsage(const char *argv0) {
         "\n"
         "When <dag-output> is \"path\", the following options are available:\n"
         "\n"
+        "  --random     select a path uniformly at random\n"
+        "\n"
+        "When <dag-output> is \"paths\", the following options are available:\n"
+        "\n"
         "  --skip=<N>   skip the first N paths\n"
         "  --max=<N>    print at most N paths\n"
         "\n"
         "If <dag-output> is missing, then a single shortest path is printed, calculated using\n"
         "an older algorithm. The output is similar to \"path\", but slightly faster because it\n"
-        "only calculates a single path and not the entire DAG of shortest paths.\n" << std::flush;
+        "only calculates a single path and not the entire DAG of shortest paths.\n"
+        << std::flush;
 }
 
 bool Main(const Options &options) {
@@ -252,11 +268,11 @@ bool Main(const Options &options) {
             break;
 
         case DagOutputType::PATH:
-            PrintFirstPath(annotated_dag);
+            PrintPath(annotated_dag, options.random);
             break;
 
         case DagOutputType::PATHS:
-            PrintAllPaths(annotated_dag, options.skip, options.max);
+            PrintPaths(annotated_dag, options.skip, options.max);
             break;
 
         case DagOutputType::EDGES:

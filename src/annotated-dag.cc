@@ -80,7 +80,7 @@ bool AnnotatedDag::EnumeratePaths(const EnumeratePathsCallback &callback, int64_
     }.EnumeratePaths(start);
 }
 
-int64_t AnnotatedDag::CountPaths() {
+int64_t AnnotatedDag::CountPaths() const {
     return start->PathCount(finish);
 }
 

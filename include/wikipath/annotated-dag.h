@@ -91,7 +91,7 @@ public:
 
     // Returns a count of the number of paths from Start() to Finish(), without
     // explicitly enumerating all possible paths.
-    int64_t CountPaths();
+    int64_t CountPaths() const;
 
     using Path = std::span<const AnnotatedLink*>;
     using EnumeratePathsCallback = std::function<bool(Path)>;
