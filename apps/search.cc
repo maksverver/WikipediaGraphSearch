@@ -52,12 +52,13 @@ void DumpSearchStats(const SearchStats stats) {
     std::cerr << "Vertices reached:  " << stats.vertices_reached << '\n';
     std::cerr << "Vertices expanded: " << stats.vertices_expanded << '\n';
     std::cerr << "Edges expanded:    " << stats.edges_expanded << '\n';
-    std::cerr << "Time taken:        " << stats.time_taken_ms << " ms\n";
+    std::cerr << "Search time:       " << stats.time_taken_ms << " ms\n";
 }
 
 bool SearchClassic(Reader &reader, index_t start, index_t finish) {
     SearchStats stats;
     std::vector<index_t> path = FindShortestPath(reader.Graph(), start, finish, &stats);
+    DumpSearchStats(stats);
     if (path.empty()) {
         std::cerr << "No path found!\n";
     } else {
@@ -69,7 +70,6 @@ bool SearchClassic(Reader &reader, index_t start, index_t finish) {
             }
         }
     }
-    DumpSearchStats(stats);
     return true;
 }
 
@@ -279,7 +279,10 @@ bool Main(const Options &options) {
     }
 
     SearchStats stats;
-    if (auto dag = FindShortestPathDag(reader->Graph(), start, finish, &stats)) {
+    auto dag = FindShortestPathDag(reader->Graph(), start, finish, &stats);
+    DumpSearchStats(stats);
+
+    if (dag) {
         AnnotatedDag annotated_dag(reader.get(), start, finish, *dag);
 
         switch (options.output_type) {
@@ -323,7 +326,6 @@ bool Main(const Options &options) {
             std::cerr << "No path found!\n";
         }
     }
-    DumpSearchStats(stats);
     return true;
 }
 
