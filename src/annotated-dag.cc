@@ -2,7 +2,28 @@
 
 #include "wikipath/reader.h"
 
+#include <algorithm>
+#include <locale>
+#include <ranges>
+#include <string_view>
 #include <unordered_map>
+
+namespace {
+
+// Comparator that compares strings using the given locale.
+struct LocaleStringLess {
+    std::locale locale = std::locale();  // use global locale
+
+    bool operator()(std::string_view a, std::string_view b) const {
+        return std::use_facet<std::collate<char>>(locale).compare(
+            a.data(), a.data() + a.size(), b.data(), b.data() + b.size()) < 0;
+    }
+};
+
+// This causes the locale to be inherited from the environment.
+static std::locale native_locale("");
+
+}  // namespace
 
 namespace wikipath {
 
@@ -32,8 +53,28 @@ std::string_view AnnotatedPage::Title() const {
 int64_t AnnotatedPage::CalculatePathCount(const AnnotatedPage *page, const AnnotatedPage *finish) {
 	if (page == finish) return 1;
 	int64_t res = 0;
-	for (const auto &link : page->Adj()) res += link.Dst()->PathCount(finish);
+	for (const auto &link : page->links) res += link.Dst()->PathCount(finish);
 	return res;
+}
+
+void AnnotatedPage::SortLinks(std::vector<AnnotatedLink> &links, LinkOrder order) {
+
+    switch (order) {
+        case LinkOrder::ID:
+            std::ranges::sort(links, {},
+                    [](const AnnotatedLink &link) { return link.Dst()->Id(); });
+            break;
+
+        case LinkOrder::TITLE:
+            std::ranges::sort(links, LocaleStringLess{native_locale},
+                    [](const AnnotatedLink &link) { return link.Dst()->Title(); });
+            break;
+
+        case LinkOrder::TEXT:
+            std::ranges::sort(links, LocaleStringLess{native_locale},
+                    [](const AnnotatedLink &link) { return link.Text(); });
+            break;
+    }
 }
 
 AnnotatedDag::AnnotatedDag(
@@ -71,11 +112,15 @@ AnnotatedDag::AnnotatedDag(
     }
 }
 
-bool AnnotatedDag::EnumeratePaths(const EnumeratePathsCallback &callback, int64_t offset) const {
+bool AnnotatedDag::EnumeratePaths(
+        const EnumeratePathsCallback &callback,
+        int64_t offset,
+        LinkOrder order) const {
     return EnumeratePathsContext{
         .finish = finish,
         .callback = &callback,
         .offset = offset,
+        .order = order,
         .links = {},
     }.EnumeratePaths(start);
 }
@@ -88,7 +133,7 @@ bool AnnotatedDag::EnumeratePathsContext::EnumeratePaths(const AnnotatedPage *pa
     if (page == finish) {
         return offset == 0 ? (*callback)(links) : true;
     }
-    for (const AnnotatedLink &link : page->Adj()) {
+    for (const AnnotatedLink &link : page->Links(order)) {
         links.push_back(&link);
         int64_t n;
         if (offset > 0 && (n = link.Dst()->PathCount(finish)) <= offset) {

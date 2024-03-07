@@ -27,12 +27,19 @@ enum class DagOutputType {
     DOT,    // Output the DAG in GraphViz DOT file format.
 };
 
-bool ParseDagOutputType(std::string_view sv, DagOutputType &mode) {
-    if (sv == "count") return mode = DagOutputType::COUNT, true;
-    if (sv == "path")  return mode = DagOutputType::PATH,  true;
-    if (sv == "paths") return mode = DagOutputType::PATHS, true;
-    if (sv == "edges") return mode = DagOutputType::EDGES, true;
-    if (sv == "dot")   return mode = DagOutputType::DOT,   true;
+bool ParseDagOutputType(std::string_view sv, DagOutputType &type) {
+    if (sv == "count") return type = DagOutputType::COUNT, true;
+    if (sv == "path")  return type = DagOutputType::PATH,  true;
+    if (sv == "paths") return type = DagOutputType::PATHS, true;
+    if (sv == "edges") return type = DagOutputType::EDGES, true;
+    if (sv == "dot")   return type = DagOutputType::DOT,   true;
+    return false;
+}
+
+bool ParseLinkOrder(std::string_view sv, wikipath::LinkOrder &order) {
+    if (sv == "id")    return order = wikipath::LinkOrder::ID,    true;
+    if (sv == "title") return order = wikipath::LinkOrder::TITLE, true;
+    if (sv == "text")  return order = wikipath::LinkOrder::TEXT,  true;
     return false;
 }
 
@@ -66,7 +73,7 @@ bool SearchClassic(Reader &reader, index_t start, index_t finish) {
     return true;
 }
 
-void PrintPath(const AnnotatedDag &dag, bool random) {
+void PrintPath(const AnnotatedDag &dag, bool random, LinkOrder order) {
     auto print_path = [&dag](std::span<const AnnotatedLink*> links) {
         std::cout << dag.Start()->Ref() << '\n';
         for (const AnnotatedLink *link : links) {
@@ -80,10 +87,10 @@ void PrintPath(const AnnotatedDag &dag, bool random) {
         skip = RandInt<int64_t>(0, path_count - 1);
         std::cerr << "Randomly selected path " << skip + 1 << " of " << path_count << ".\n";
     }
-    dag.EnumeratePaths(print_path, skip);
+    dag.EnumeratePaths(print_path, skip, order);
 }
 
-void PrintPaths(const AnnotatedDag &dag, int64_t skip, int64_t max) {
+void PrintPaths(const AnnotatedDag &dag, int64_t skip, int64_t max, LinkOrder order) {
     if (max <= 0) return;
     if (skip < 0) skip = 0;
     auto print_path = [&dag, &max](std::span<const AnnotatedLink*> links) {
@@ -94,7 +101,7 @@ void PrintPaths(const AnnotatedDag &dag, int64_t skip, int64_t max) {
         std::cout << '\n';
         return --max > 0;
     };
-    dag.EnumeratePaths(print_path, skip);
+    dag.EnumeratePaths(print_path, skip, order);
 }
 
 void PrintEdges(Reader &reader, const std::vector<std::pair<index_t, index_t>> &dag) {
@@ -170,12 +177,16 @@ struct Options {
     const char *start = nullptr;
     const char *finish = nullptr;
     DagOutputType output_type = DagOutputType::NONE;
+    wikipath::LinkOrder order = wikipath::LinkOrder::ID;
     bool random = false;
     int64_t skip = 0;
     int64_t max = std::numeric_limits<int64_t>::max();
 
     bool Parse(int argc, char *argv[]) {
-        if (argc < 4) return false;
+        if (argc < 4) {
+            std::cerr << "Missing required arguments.\n";
+            return false;
+        }
         graph_filename = argv[1];
         start = argv[2];
         finish = argv[3];
@@ -187,12 +198,18 @@ struct Options {
                 random = true;
             } else if (output_type == DagOutputType::PATHS && StripPrefix(arg, "--skip=")) {
                 if (!ParseArg(arg, skip)) {
-                    std::cerr << "Failed to parse argument: " << arg << '\n';
+                    std::cerr << "Could not parse --skip value: " << arg << '\n';
                     return false;
                 }
             } else if (output_type == DagOutputType::PATHS && StripPrefix(arg, "--max=")) {
                 if (!ParseArg(arg, max)) {
-                    std::cerr << "Failed to parse argument: " << arg << '\n';
+                    std::cerr << "Could not parse --max value: " << arg << '\n';
+                    return false;
+                }
+            } else if ((output_type == DagOutputType::PATH || output_type == DagOutputType::PATHS)
+                    && StripPrefix(arg, "--order=")) {
+                if (!ParseLinkOrder(arg, order)) {
+                    std::cerr << "Could not parse --order value: " << arg << '\n';
                     return false;
                 }
             } else {
@@ -232,6 +249,13 @@ void PrintUsage(const char *argv0) {
         "  --skip=<N>   skip the first N paths\n"
         "  --max=<N>    print at most N paths\n"
         "\n"
+        "When <dag-output> is \"path\" or \"paths\", the following options are available:\n"
+        "\n"
+        "   --order=<key>  order paths lexicographically by the given key; one of:\n"
+        "                       \"id\"     page id (default)\n"
+        "                       \"title\"  page title\n"
+        "                       \"text\"   link text\n"
+        "\n"
         "If <dag-output> is missing, then a single shortest path is printed, calculated using\n"
         "an older algorithm. The output is similar to \"path\", but slightly faster because it\n"
         "only calculates a single path and not the entire DAG of shortest paths.\n"
@@ -268,11 +292,11 @@ bool Main(const Options &options) {
             break;
 
         case DagOutputType::PATH:
-            PrintPath(annotated_dag, options.random);
+            PrintPath(annotated_dag, options.random, options.order);
             break;
 
         case DagOutputType::PATHS:
-            PrintPaths(annotated_dag, options.skip, options.max);
+            PrintPaths(annotated_dag, options.skip, options.max, options.order);
             break;
 
         case DagOutputType::EDGES:

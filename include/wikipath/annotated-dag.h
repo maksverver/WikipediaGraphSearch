@@ -41,6 +41,12 @@ private:
     mutable std::variant<const Reader*, std::string> reader_or_text;
 };
 
+enum class LinkOrder : char {
+    ID,     // order links by target page id (default)
+    TITLE,  // order links by target page title
+    TEXT,   // order links by link text
+};
+
 class AnnotatedPage {
 public:
     AnnotatedPage(index_t id, const Reader *reader)
@@ -52,12 +58,22 @@ public:
 
     std::string Ref() const { return PageRef(id, Title()); }
 
-    std::span<AnnotatedLink> Adj() { return adj; }
-    std::span<const AnnotatedLink> Adj() const { return adj; }
+    // Returns the outgoing links for this page, in the given order.
+    std::span<AnnotatedLink> Links(LinkOrder order = LinkOrder::ID) {
+        if (links_order != order) {
+            SortLinks(links, order);
+            links_order = order;
+        }
+        return links;
+    }
+
+    std::span<const AnnotatedLink> Links(LinkOrder order = LinkOrder::ID) const {
+        return const_cast<AnnotatedPage*>(this)->Links(order);
+    }
 
 private:
     void AddLink(AnnotatedPage *dst, const Reader *reader) {
-        adj.push_back(AnnotatedLink(this, dst, reader));
+        links.push_back(AnnotatedLink(this, dst, reader));
     }
 
     int64_t PathCount(const AnnotatedPage *finish) const {
@@ -66,18 +82,27 @@ private:
     }
 
     static int64_t CalculatePathCount(const AnnotatedPage *page, const AnnotatedPage *finish);
+    static void SortLinks(std::vector<AnnotatedLink> &links, LinkOrder order);
 
     friend class AnnotatedDag;
 
     index_t id;
     mutable std::variant<const Reader*, std::string> reader_or_title;
-    std::vector<AnnotatedLink> adj;
+    std::vector<AnnotatedLink> links;
     mutable int64_t path_count = -1;
+    LinkOrder links_order = LinkOrder::ID;
 };
 
 // Represents a DAG, like produced by FindShortestPathDag(), annotated with
-// page titles and link textx. The metadata is loaded on-demand using the given
+// page titles and link text. The metadata is loaded on-demand using the given
 // reader.
+//
+// Supports:
+//
+//   - efficient computation of the total path count
+//   - efficient enumeration of paths starting at an arbitrary offset
+//   - efficient enumeration of paths in lexicographical order
+//
 class AnnotatedDag {
 public:
     // Constructs an AnnotatedDag using the given reader from an edge list that
@@ -88,6 +113,9 @@ public:
     AnnotatedDag(
             const Reader *reader, index_t start_id, index_t finish_id,
             const std::vector<std::pair<index_t, index_t>> &edge_list);
+
+    const AnnotatedPage *Start() const { return start; }
+    const AnnotatedPage *Finish() const { return finish; }
 
     // Returns a count of the number of paths from Start() to Finish(), without
     // explicitly enumerating all possible paths.
@@ -106,16 +134,14 @@ public:
     // the case were no paths were found so the callback was never called.
     bool EnumeratePaths(
             const EnumeratePathsCallback &callback,
-            int64_t offset = 0) const;
-
-    const AnnotatedPage *Start() const { return start; }
-    const AnnotatedPage *Finish() const { return finish; }
+            int64_t offset = 0, LinkOrder order = LinkOrder::ID) const;
 
 private:
     struct EnumeratePathsContext {
         const AnnotatedPage *finish;
         const EnumeratePathsCallback *callback;
         int64_t offset;
+        LinkOrder order;
         std::vector<const AnnotatedLink*> links;
 
         bool EnumeratePaths(const AnnotatedPage *page);

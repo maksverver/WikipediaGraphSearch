@@ -62,38 +62,49 @@ The search tool finds a path betweeen two pages, e.g.:
 
 % ./search enwiki-20200401-pages-articles.graph 'Mongolia' 'Cheeseburger'
 Searching shortest path from #12481 (Mongolia) to #111090 (Cheeseburger)...
+Vertices reached:  46880
+Vertices expanded: 472
+Edges expanded:    72884
+Search time:       45 ms
 #12481 (Mongolia)
 #1933 (Berlin)
 #9280 (Ich bin ein Berliner)
 #30560 (Hamburger)
 #111090 (Cheeseburger)
-Vertices reached:  46880
-Vertices expanded: 472
-Edges expanded:    72884
-Time taken:        45 ms
 
 
 It's also possible to list all possible paths, one per line:
 
 ./search enwiki-20240220-pages-articles.graph "Potthastia" "Love Don't Cost a Thing (song)" paths
-Searching shortest path from #2619974 (Potthastia) to #668382 (Love Don't Cost a Thing (song))...
+...
 #2619974 (Potthastia) -> #31862 (Fly; displayed as: Diptera) -> #4307 (European Union) -> #11218 (Portugal) -> #290683 (MTV Europe Music Awards) -> #668382 (Love Don't Cost a Thing (song); displayed as: Love Don't Cost a Thing)
 #2619974 (Potthastia) -> #31862 (Fly; displayed as: Diptera) -> #13256 (Steven Spielberg) -> #9118 (MTV) -> #477810 (List of Super Bowl halftime shows; displayed as: halftime show) -> #668382 (Love Don't Cost a Thing (song); displayed as: Love Don't Cost a Thing)
 #2619974 (Potthastia) -> #31862 (Fly; displayed as: Diptera) -> #13256 (Steven Spielberg) -> #23693 (Fox Broadcasting Company; displayed as: Fox) -> #7731 (Jennifer Lopez) -> #668382 (Love Don't Cost a Thing (song); displayed as: Love Don't Cost a Thing)
 ...
 
 
-Or just the total number of paths:
+Paths can be ordered lexicographically by page id (default), page title, or link
+text (the text after "displayed as:"):
+
+./search enwiki-20240220-pages-articles.graph "Potthastia" "Love Don't Cost a Thing (song)" paths
+...
+#2619974 (Potthastia) -> #1566599 (Animal) -> #90958 (Barnacle) -> #11218 (Portugal) -> #290683 (MTV Europe Music Awards) -> #668382 (Love Don't Cost a Thing (song); displayed as: Love Don't Cost a Thing)
+#2619974 (Potthastia) -> #1566599 (Animal) -> #94962 (Falconry; displayed as: birds of prey) -> #11218 (Portugal) -> #290683 (MTV Europe Music Awards) -> #668382 (Love Don't Cost a Thing (song); displayed as: Love Don't Cost a Thing)
+#2619974 (Potthastia) -> #1566599 (Animal) -> #94962 (Falconry; displayed as: birds of prey) -> #270029 (Saturday Night Live) -> #7731 (Jennifer Lopez) -> #668382 (Love Don't Cost a Thing (song); displayed as: Love Don't Cost a Thing)
+#2619974 (Potthastia) -> #1566599 (Animal) -> #987198 (Canada) -> #42163 (Music video) -> #664908 (VH1 Top 20 Video Countdown) -> #668382 (Love Don't Cost a Thing (song); displayed as: Love Don't Cost a Thing)
+...
+
+When sorting by page title or link text, strings are compared according to the
+current locale (LC_COLLATE).
+
+The `search` tool can also count the total number of paths, more quickly than
+enumerating them all:
 
 $ ./search enwiki-20240220-pages-articles.graph "Potthastia" "Love Don't Cost a Thing (song)" count
-Searching shortest path from #2619974 (Potthastia) to #668382 (Love Don't Cost a Thing (song))...
+...
 113
-Vertices reached:  82574
-Vertices expanded: 1669
-Edges expanded:    170005
-Time taken:        52 ms
 
-And a few other options. Run `search` without arguments for a list of all
+There are a few more options. Run `search` without arguments for a list of all
 output types and associated options.
 
 
