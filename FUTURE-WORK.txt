@@ -48,6 +48,17 @@ Additionally, the ideal threshold for switching (1% in the example above) may
 depend on the shape of the graph.
 
 
+Multiple paths in web frontend
+------------------------------
+
+Currently, the web frontend (both the old and the new one) shows only a single
+shortest path, while the command line `search` tool can show all paths.
+
+It would be nice to be able to show all paths in the web frontend too (possibly
+with pagination, though I don't know if that's necessary, since it seems rare
+for a pair of articles to have more than 1000 paths between them).
+
+
 Various other improvements
 --------------------------
 
