@@ -24,6 +24,19 @@ BUILDING
 
 Binaries are written to build/apps/
 
+If the Python module is included in the build, it is written to
+build/src/wikipath.cpython-311-x86_64-linux-gnu.so
+
+
+DEVELOPMENT
+
+For local development, generate the build directory with:
+
+% cmake -B build -D CMAKE_EXPORT_COMPILE_COMMANDS=1 -D CMAKE_BUILD_TYPE=Debug
+
+This generates build/compile_commands.json, which can be used by the clangd
+language server to determine how to build source files.
+
 
 RUNNING: index
 
@@ -108,6 +121,21 @@ There are a few more options. Run `search` without arguments for a list of all
 output types and associated options.
 
 
+For both the `search` and `inspect` tools, articles can be referenced by name
+(e.g., "Mongolia"), by page id (e.g., "#12481"), or selected at random ("?").
+
+To find a shortest path between two random articles:
+
+% ./search enwiki-20231101-pages-articles.graph '?' '?'
+Searching shortest path from #5149995 (Bobby, the Petrol Boy) to #5180352 (Jacky Bovay)...
+#5149995 (Bobby, the Petrol Boy)
+#1420 (Berlin)
+#11200 (Paris)
+#15047 (Tour de France)
+#1095984 (1955 Tour de France; displayed as: 1955)
+#5180352 (Jacky Bovay)
+
+
 RUNNING: inspect
 
 The inspect tool can be used to identify pages and their links:
@@ -125,24 +153,16 @@ Incoming links:
  <- #1702 (BASIC; displayed as: Dijkstra)
 ..
 
-For both the `search` and `inspect` tools, articles can be referenced by name
-(e.g., "Mongolia"), by page id (e.g., "#12481"), or selected at random ("?").
 
-To find a shortest path between two random articles:
-
-% ./search enwiki-20231101-pages-articles.graph '?' '?'
-Searching shortest path from #5149995 (Bobby, the Petrol Boy) to #5180352 (Jacky Bovay)...
-#5149995 (Bobby, the Petrol Boy)
-#1420 (Berlin)
-#11200 (Paris)
-#15047 (Tour de France)
-#1095984 (1955 Tour de France; displayed as: 1955)
-#5180352 (Jacky Bovay)
+WEB FRONTENDS
 
 
-RUNNING: websearch
+OLD WEB FRONTEND: websearch
 
-The websearch binary (which requires Wt, the web toolkit) runs the web frontend:
+The `websearch` binary is a standalone implementation in C++ using the Wt
+library. The UI is very simple and I do not plan to update it anymore.
+
+It can be run like this:
 
 % ./websearch enwiki-20240120-pages-articles.graph --docroot /usr/share/Wt \
     --http-address localhost --http-port 8080
@@ -155,14 +175,35 @@ The websearch binary (which requires Wt, the web toolkit) runs the web frontend:
 Open http://localhost:8080/ in a web browser to use the tool.
 
 
-DEVELOPMENT
+NEW WEB FRONTEND: python/http_server.py
 
-For development, generate the build directory with:
+The new web frontend is based on an HTTP server implemented in Python, which
+uses the wikipath Python module to expose graph search functionality over the
+web. The UI looks prettier and the architecture is more robust.
 
-% cmake -B build -D CMAKE_EXPORT_COMPILE_COMMANDS=1 -D CMAKE_BUILD_TYPE=Debug
+The implementation is separated into two parts:
 
-This generates build/compile_commands.json, which is used by the clangd language
-server to determine how to build source files.
+  - python/http_server.py, which provides a REST API to search the graph.
+    See docs/http-server-api.txt for a summary of supported methods.
+
+  - htdocs/, the subdirectory with the static files that are used by the client.
+    Most importantly, htdocs/app.js implements the client-side logic in plain
+    JavaScript.
+
+The Python server can be run locally as follows:
+
+PYTHONPATH=build/src/ python/http_server.py --host=localhost --port=8080 \
+    fywiki-20240201-pages-articles.graph \
+    --wiki_base_url=https://fy.wikipedia.org/wiki/
+
+As before, open http://localhost:8080/ in a web browser to use the tool.
+
+In the above command line, build/src/ is the subdirectory that contains the
+compiled Python module (e.g. build/src/wikipath.cpython-311-x86_64-linux-gnu.so).
+
+http_server.py also serves static content from htdocs/ (by default). In a
+production environment, it's more efficient to have a dedicated webserver like
+nginx serve these files statically.
 
 
 EOF
