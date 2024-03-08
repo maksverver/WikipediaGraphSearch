@@ -312,5 +312,3 @@ class App {
     }
   }
 }
-
-// TODO: handle errors from RPC endpoints!
