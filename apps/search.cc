@@ -177,7 +177,7 @@ struct Options {
     const char *start = nullptr;
     const char *finish = nullptr;
     DagOutputType output_type = DagOutputType::NONE;
-    wikipath::LinkOrder order = wikipath::LinkOrder::ID;
+    wikipath::LinkOrder order = wikipath::DEFAULT_LINK_ORDER;
     bool random = false;
     int64_t skip = 0;
     int64_t max = std::numeric_limits<int64_t>::max();

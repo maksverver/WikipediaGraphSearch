@@ -19,13 +19,20 @@ namespace wikipath {
 
 class AnnotatedPage;
 
+// A link between two pages: from Src() to Dst(), displayed as Text().
+//
+// This class is thread-compatible, but not thread safe: the same instance
+// should not be accessed concurrently from multiple threads.
 class AnnotatedLink {
 public:
     AnnotatedLink(AnnotatedPage *src, AnnotatedPage *dst, const Reader *reader)
             : src(src), dst(dst), reader_or_text(reader) {}
 
-    AnnotatedPage *Src() { return src; }
-    AnnotatedPage *Dst() { return dst; }
+    // Movable but not copyable.
+    AnnotatedLink(const AnnotatedLink &) = delete;
+    AnnotatedLink &operator=(const AnnotatedLink &) = delete;
+    AnnotatedLink(AnnotatedLink &&) = default;
+    AnnotatedLink &operator=(AnnotatedLink &&) = default;
 
     const AnnotatedPage *Src() const { return src; }
     const AnnotatedPage *Dst() const { return dst; }
@@ -47,10 +54,22 @@ enum class LinkOrder : char {
     TEXT,   // order links by link text
 };
 
+static constexpr LinkOrder DEFAULT_LINK_ORDER = LinkOrder::ID;
+
+// A page in the DAG with an Id() and Title().
+//
+// This class is thread-compatible, but not thread safe: the same instance
+// should not be accessed concurrently from multiple threads.
 class AnnotatedPage {
 public:
     AnnotatedPage(index_t id, const Reader *reader)
             : id(id), reader_or_title(reader) {}
+
+    // Movable but not copyable.
+    AnnotatedPage(const AnnotatedPage &) = delete;
+    AnnotatedPage &operator=(const AnnotatedPage &) = delete;
+    AnnotatedPage(AnnotatedPage &&) = default;
+    AnnotatedPage &operator=(AnnotatedPage &&) = default;
 
     index_t Id() const { return id; }
 
@@ -58,17 +77,13 @@ public:
 
     std::string Ref() const { return PageRef(id, Title()); }
 
-    // Returns the outgoing links for this page, in the given order.
-    std::span<AnnotatedLink> Links(LinkOrder order = LinkOrder::ID) {
+    // Returns the outgoing links for this page within the DAG, in the given order.
+    std::span<const AnnotatedLink> Links(LinkOrder order = DEFAULT_LINK_ORDER) const {
         if (links_order != order) {
             SortLinks(links, order);
             links_order = order;
         }
         return links;
-    }
-
-    std::span<const AnnotatedLink> Links(LinkOrder order = LinkOrder::ID) const {
-        return const_cast<AnnotatedPage*>(this)->Links(order);
     }
 
 private:
@@ -88,9 +103,9 @@ private:
 
     index_t id;
     mutable std::variant<const Reader*, std::string> reader_or_title;
-    std::vector<AnnotatedLink> links;
+    mutable std::vector<AnnotatedLink> links;
     mutable int64_t path_count = -1;
-    LinkOrder links_order = LinkOrder::ID;
+    mutable LinkOrder links_order = LinkOrder::ID;
 };
 
 // Represents a DAG, like produced by FindShortestPathDag(), annotated with
@@ -114,6 +129,12 @@ public:
             const Reader *reader, index_t start_id, index_t finish_id,
             const std::vector<std::pair<index_t, index_t>> &edge_list);
 
+    // Movable but not copyable.
+    AnnotatedDag(const AnnotatedDag&) = delete;
+    AnnotatedDag& operator=(const AnnotatedDag&) = delete;
+    AnnotatedDag(AnnotatedDag&&) = default;
+    AnnotatedDag& operator=(AnnotatedDag&&) = default;
+
     const AnnotatedPage *Start() const { return start; }
     const AnnotatedPage *Finish() const { return finish; }
 
@@ -134,7 +155,7 @@ public:
     // the case were no paths were found so the callback was never called.
     bool EnumeratePaths(
             const EnumeratePathsCallback &callback,
-            int64_t offset = 0, LinkOrder order = LinkOrder::ID) const;
+            int64_t offset = 0, LinkOrder order = DEFAULT_LINK_ORDER) const;
 
 private:
     struct EnumeratePathsContext {
