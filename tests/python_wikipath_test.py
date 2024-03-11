@@ -446,6 +446,12 @@ class Test_AnnotatedDag(unittest.TestCase):
                         paths_to_titles(dag, dag.paths(maxlen=j - i, skip=i)),
                         expected_titles[i:j])
 
+    def test__paths__start_is_finish(self):
+        dag = self.reader.shortest_path_annotated_dag('B1', 'B1')
+        self.assertEqual(len(dag), 1)
+        self.assertEqual(dag.paths(), [[]])
+        self.assertEqual(dag.paths(skip=1), [])
+
 
 class Test_AnnotatedDag_paths_order(unittest.TestCase):
 
