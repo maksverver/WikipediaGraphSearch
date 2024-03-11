@@ -40,9 +40,10 @@ if (pybind11_FOUND)
   # performance.
   python_add_library(wikipath MODULE
       python-module.cc
-      pipe-trick.cc
+      annotated-dag.cc
       graph-reader.cc
       metadata-reader.cc
+      pipe-trick.cc
       reader.cc
       searcher.cc
       WITH_SOABI)

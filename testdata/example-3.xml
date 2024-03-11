@@ -1,0 +1,28 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.10/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mediawiki.org/xml/export-0.10/ http://w
+ww.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="en">
+  <siteinfo>
+    <sitename>Testwiki</sitename>
+    <dbname>testwiki</dbname>
+    <case>first-letter</case>
+    <namespaces>
+      <namespace key="0" case="first-letter" />
+    </namespaces>
+  </siteinfo>
+  <!--
+  An example used to test path orderering.
+
+                      
+             -> C (2) -[x]-> G (5)
+            /         \ /  \
+   Start (1) -> A (3) -X    -> Finish (7)
+            \         / \  /
+             -> B (4) -[y]-> H (6)
+  -->
+  <page><title>Start</title><ns>0</ns><revision><text>[[A]] [[B]] [[C]]</text></revision></page>
+  <page><title>C</title><ns>0</ns><revision><text>[[G|x]] [[H|y]]</text></revision></page>
+  <page><title>A</title><ns>0</ns><revision><text>[[G|y]] [[H|x]]</text></revision></page>
+  <page><title>B</title><ns>0</ns><revision><text>[[G|x]] [[H|y]]</text></revision></page>
+  <page><title>G</title><ns>0</ns><revision><text>[[Finish]]</text></revision></page>
+  <page><title>H</title><ns>0</ns><revision><text>[[Finish]]</text></revision></page>
+  <page><title>Finish</title><ns>0</ns><revision><text>[[Start]]</text></revision></page>
+</mediawiki>

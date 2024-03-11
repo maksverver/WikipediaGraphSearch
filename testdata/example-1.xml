@@ -17,6 +17,26 @@ ww.mediawiki.org/xml/export-0.10.xsd" version="0.10" xml:lang="en">
       <namespace key="15" case="first-letter">Category talk</namespace>
     </namespaces>
   </siteinfo>
+
+  <!--
+
+  Graph structure:
+
+   5: Violet   6: Violet
+   (flower)  ->  (color)
+         ^         |
+          \        |
+        4: Rose    |
+            |      |
+            v      |
+        1: Red     |
+         ^    ^    |
+        /      \   |
+       v        v  v
+  2: Green <-> Blue (3)
+
+  -->
+
   <page>
     <title>Category:Colors</title>
     <ns>14</ns>

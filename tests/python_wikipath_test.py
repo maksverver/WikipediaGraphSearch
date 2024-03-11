@@ -6,10 +6,7 @@ import wikipath
 class TestGraphReader(unittest.TestCase):
 
     def setUp(self):
-        self.reader = wikipath.GraphReader('testdata/example.graph')
-
-    def tearDown(self):
-        del self.reader
+        self.reader = wikipath.GraphReader('testdata/example-1.graph')
 
     def test__vertex_count(self):
         # Quirkily enough, vertex_count includes the invalid 0 vertex.
@@ -56,10 +53,7 @@ class TestGraphReader(unittest.TestCase):
 class TestMetadataReader(unittest.TestCase):
 
     def setUp(self):
-        self.reader = wikipath.MetadataReader('testdata/example.metadata')
-
-    def tearDown(self):
-        del self.reader
+        self.reader = wikipath.MetadataReader('testdata/example-1.metadata')
 
     def test__get_page_by_id(self):
         self.assertEqual(
@@ -101,10 +95,7 @@ class TestMetadataReader(unittest.TestCase):
 class TestReader(unittest.TestCase):
 
     def setUp(self):
-        self.reader = wikipath.Reader('testdata/example.graph')
-
-    def tearDown(self):
-        del self.reader
+        self.reader = wikipath.Reader('testdata/example-1.graph')
 
     def test__is_valid_page_id(self):
         self.assertEqual(self.reader.is_valid_page_id(0), False)
@@ -205,6 +196,300 @@ class TestReader(unittest.TestCase):
         self.assertEqual(
                 self.reader.backward_link_ref(1, 4),
                 '#1 (Red; displayed as: unknown)')
+
+
+class Test_GraphReader_shortest_path_dag(unittest.TestCase):
+
+    def setUp(self):
+        reader = wikipath.Reader('testdata/example-2.graph')
+        self.start = reader.parse_page_argument('A2')
+        self.finish = reader.parse_page_argument('F2')
+        self.graph = reader.graph
+
+    def test__shortest_path_dag(self):
+        self.assertEqual(self.graph.shortest_path_dag(self.start, self.finish), [
+                (2, 4), (2, 5), (4, 6), (5, 7), (5, 8), (6, 9), (7, 10), (8, 10),
+                (9, 11), (9, 12), (9, 13), (10, 12), (10, 13), (11, 15), (12, 15), (13, 15)])
+
+    def test__shortest_path_dag__no_edges(self):
+        self.assertEqual(self.graph.shortest_path_dag(self.start, self.start), [])
+        self.assertEqual(self.graph.shortest_path_dag(self.finish, self.finish), [])
+
+    def test__shortest_path_dag__not_found(self):
+        self.assertEqual(self.graph.shortest_path_dag(self.finish, self.start), None)
+
+    def test__shortest_path_dag_with_stats(self):
+        edges, stats = self.graph.shortest_path_dag_with_stats(self.start, self.finish)
+        self.assertEqual(edges, [
+                (2, 4), (2, 5), (4, 6), (5, 7), (5, 8), (6, 9), (7, 10), (8, 10),
+                (9, 11), (9, 12), (9, 13), (10, 12), (10, 13), (11, 15), (12, 15), (13, 15)])
+        self.assertEqual(stats.vertices_reached,  15)
+        self.assertEqual(stats.vertices_expanded, 11)
+        self.assertEqual(stats.edges_expanded,    26)
+        self.assertTrue(stats.time_taken_ms >= 0)
+
+    def test__shortest_path_dag_with_stats__not_found(self):
+        edges, stats = self.graph.shortest_path_dag_with_stats(self.finish, self.start)
+        self.assertEqual(edges, None)
+        self.assertEqual(stats.vertices_reached,  3)
+        self.assertEqual(stats.vertices_expanded, 2)
+        self.assertEqual(stats.edges_expanded,    2)
+        self.assertTrue(stats.time_taken_ms >= 0)
+
+
+
+class Test_Reader_shortest_path_annotated_dag(unittest.TestCase):
+
+    def setUp(self):
+        self.reader = wikipath.Reader('testdata/example-2.graph')
+        self.start = self.reader.parse_page_argument('A2')
+        self.finish = self.reader.parse_page_argument('F2')
+
+    def test__shortest_path_annotated_dag(self):
+        self.assertEqual(len(self.reader.shortest_path_annotated_dag(self.start, self.finish)), 7)
+
+    def test__shortest_path_annotated_dag__no_edges(self):
+        self.assertEqual(len(self.reader.shortest_path_annotated_dag(self.start, self.start)), 1)
+
+    def test__shortest_path_annotated_dag__not_found(self):
+        self.assertEqual(self.reader.shortest_path_annotated_dag(self.finish, self.start), None)
+
+    def test__shortest_path_annotated_dag__invalid_indices(self):
+        self.assertEqual(self.reader.shortest_path_annotated_dag(self.start,   0), None)
+        self.assertEqual(self.reader.shortest_path_annotated_dag(self.start, 999), None)
+        self.assertEqual(self.reader.shortest_path_annotated_dag(0,   self.finish), None)
+        self.assertEqual(self.reader.shortest_path_annotated_dag(999, self.finish), None)
+
+    def test__shortest_path_annotated_dag__by_name(self):
+        self.assertEqual(len(self.reader.shortest_path_annotated_dag('A2', 'F2')), 7)
+        self.assertEqual(self.reader.shortest_path_annotated_dag('A2', 'Nonexistent'), None)
+        self.assertEqual(self.reader.shortest_path_annotated_dag('Nonexistent', 'F2'), None)
+
+    def test__shortest_path_annotated_dag_with_stats(self):
+        dag, stats = self.reader.shortest_path_annotated_dag_with_stats(self.start, self.finish)
+        self.assertEqual(len(dag), 7)
+        self.assertEqual(stats.vertices_reached,  15)
+        self.assertEqual(stats.vertices_expanded, 11)
+        self.assertEqual(stats.edges_expanded,    26)
+        self.assertTrue(stats.time_taken_ms >= 0)
+
+    def test__shortest_path_annotated_dag_with_stats__by_name(self):
+        dag, stats = self.reader.shortest_path_annotated_dag_with_stats('A2', 'F2')
+        self.assertEqual(len(dag), 7)
+        self.assertEqual(type(stats), wikipath.SearchStats)
+
+        dag, stats = self.reader.shortest_path_annotated_dag_with_stats('A2', 'Nonexistent')
+        self.assertEqual(dag, None)
+        self.assertEqual(type(stats), wikipath.SearchStats)
+
+    def test__shortest_path_annotated_dag_with_stats__not_found(self):
+        dag, stats = self.reader.shortest_path_annotated_dag_with_stats(self.finish, self.start)
+        self.assertEqual(dag, None)
+        self.assertEqual(stats.vertices_reached,  3)
+        self.assertEqual(stats.vertices_expanded, 2)
+        self.assertEqual(stats.edges_expanded,    2)
+        self.assertTrue(stats.time_taken_ms >= 0)
+
+
+class Test_AnnotatedPage(unittest.TestCase):
+
+    def setUp(self):
+        self.reader = wikipath.Reader('testdata/example-3.graph')
+        self.dag = self.reader.shortest_path_annotated_dag(
+            self.reader.parse_page_argument('Start'),
+            self.reader.parse_page_argument('Finish'))
+
+    def test__AnnotatedPage__id(self):
+        self.assertEqual(self.dag.start.id, 1)
+        self.assertEqual(self.dag.finish.id, 7)
+
+    def test__AnnotatedPage__title(self):
+        self.assertEqual(self.dag.start.title, 'Start')
+        self.assertEqual(self.dag.finish.title, 'Finish')
+
+    def test__AnnotatedPage__ref(self):
+        self.assertEqual(self.dag.start.ref, '#1 (Start)')
+        self.assertEqual(self.dag.finish.ref, '#7 (Finish)')
+
+    def test__AnnotatedPage__str(self):
+        self.assertEqual(str(self.dag.start), '#1 (Start)')
+        self.assertEqual(str(self.dag.finish), '#7 (Finish)')
+
+    def test__AnnotatedPage__repr(self):
+        self.assertEqual(repr(self.dag.start), 'wikipath.AnnotatedPage(id=1, title="Start")')
+        self.assertEqual(repr(self.dag.finish), 'wikipath.AnnotatedPage(id=7, title="Finish")')
+
+    def test__AnnotatedPage__equality(self):
+        self.assertEqual(self.dag.start, self.dag.start)
+        self.assertEqual(self.dag.finish, self.dag.finish)
+        self.assertNotEqual(self.dag.start, self.dag.finish)
+
+    def test__AnnotatedPage__links(self):
+        self.assertEqual(
+            [(link.src.title, link.dst.title) for link in self.dag.start.links()],
+            [('Start', 'C'), ('Start', 'A'), ('Start', 'B')])
+        self.assertEqual(self.dag.finish.links(), [])
+
+
+class Test_AnnotatedLink(unittest.TestCase):
+
+    def setUp(self):
+        self.reader = wikipath.Reader('testdata/example-3.graph')
+        self.dag = self.reader.shortest_path_annotated_dag(
+            self.reader.parse_page_argument('Start'),
+            self.reader.parse_page_argument('Finish'))
+
+    def test__AnnotatedLink(self):
+        start_c, start_a, start_b = self.dag.start.links()
+        c_g, c_h = start_c.dst.links()
+
+        self.assertEqual(start_a.src, self.dag.start)
+        self.assertEqual(start_b.src, self.dag.start)
+        self.assertEqual(start_c.src, self.dag.start)
+        self.assertEqual(start_c.dst, c_g.src)
+        self.assertEqual(start_c.dst, c_h.src)
+
+        self.assertEqual(start_a.dst.title, 'A')
+        self.assertEqual(start_b.dst.title, 'B')
+        self.assertEqual(start_c.dst.title, 'C')
+        self.assertEqual(start_a.text, 'A')
+        self.assertEqual(start_b.text, 'B')
+        self.assertEqual(start_c.text, 'C')
+
+        self.assertEqual(c_g.dst.title, 'G')
+        self.assertEqual(c_h.dst.title, 'H')
+        self.assertEqual(c_g.text, 'x')
+        self.assertEqual(c_h.text, 'y')
+
+        self.assertEqual(start_c.forward_ref, '#2 (C)')
+        self.assertEqual(c_g.forward_ref, '#5 (G; displayed as: x)')
+        self.assertEqual(start_c.backward_ref, '#1 (Start)')
+        self.assertEqual(c_g.backward_ref, '#2 (C; displayed as: x)')
+        self.assertEqual(str(start_c), '#2 (C)')
+        self.assertEqual(str(c_g), '#5 (G; displayed as: x)')
+        self.assertEqual(repr(start_c), 'wikipath.AnnotatedLink(src=wikipath.AnnotatedPage(id=1, title="Start"), dst=wikipath.AnnotatedPage(id=2, title="C"), text="C")')
+        self.assertEqual(repr(c_g), 'wikipath.AnnotatedLink(src=wikipath.AnnotatedPage(id=2, title="C"), dst=wikipath.AnnotatedPage(id=5, title="G"), text="x")')
+
+    def test__AnnotatedLink_order(self):
+        start = self.dag.start
+        self.assertEqual(
+            [link.forward_ref for link in start.links(wikipath.LinkOrder.ID)],
+            ['#2 (C)', '#3 (A)', '#4 (B)'])
+        self.assertEqual(
+            [link.forward_ref for link in start.links(wikipath.LinkOrder.TITLE)],
+            ['#3 (A)', '#4 (B)', '#2 (C)'])
+        self.assertEqual(
+            [link.forward_ref for link in start.links(wikipath.LinkOrder.TEXT)],
+            ['#3 (A)', '#4 (B)', '#2 (C)'])
+
+        a = start.links()[1].dst
+        self.assertEqual(a.title, 'A')
+
+        self.assertEqual(
+            [link.forward_ref for link in a.links(wikipath.LinkOrder.ID)],
+            ['#5 (G; displayed as: y)', '#6 (H; displayed as: x)'])
+        self.assertEqual(
+            [link.forward_ref for link in a.links(wikipath.LinkOrder.TITLE)],
+            ['#5 (G; displayed as: y)', '#6 (H; displayed as: x)'])
+        self.assertEqual(
+            [link.forward_ref for link in a.links(wikipath.LinkOrder.TEXT)],
+            ['#6 (H; displayed as: x)', '#5 (G; displayed as: y)'])
+
+
+# Converts a list of paths (where each path is a list of AnnotatedLink objects)
+# to a list of page titles (where page titles are lists of strings).
+def paths_to_titles(dag, paths):
+    def path_titles(path):
+        last_page = dag.start
+        titles = [last_page.title]
+        for link in path:
+            assert link.src == last_page
+            last_page = link.dst
+            titles.append(last_page.title)
+        assert last_page == dag.finish
+        return titles
+    return [path_titles(path) for path in paths]
+
+
+class Test_AnnotatedDag(unittest.TestCase):
+
+    def setUp(self):
+        self.reader = wikipath.Reader('testdata/example-2.graph')
+        self.dag = self.reader.shortest_path_annotated_dag('A2', 'F2')
+
+    def test__count_paths(self):
+        self.assertEqual(self.dag.count_paths(), 7)
+        self.assertEqual(len(self.dag), 7)
+
+    def test__paths(self):
+        dag = self.dag
+
+        expected_titles = [
+            ['A2', 'B1', 'C1', 'D1', 'E1', 'F2'],
+            ['A2', 'B1', 'C1', 'D1', 'E2', 'F2'],
+            ['A2', 'B1', 'C1', 'D1', 'E3', 'F2'],
+            ['A2', 'B2', 'C2', 'D2', 'E2', 'F2'],
+            ['A2', 'B2', 'C2', 'D2', 'E3', 'F2'],
+            ['A2', 'B2', 'C3', 'D2', 'E2', 'F2'],
+            ['A2', 'B2', 'C3', 'D2', 'E3', 'F2'],
+        ]
+
+        self.assertEqual(paths_to_titles(dag, dag.paths()), expected_titles)
+        self.assertEqual(paths_to_titles(dag, dag.paths(100)), expected_titles)
+        self.assertEqual(paths_to_titles(dag, dag.paths(maxlen=100)), expected_titles)
+        self.assertEqual(paths_to_titles(dag, dag.paths(2, 3)), expected_titles[3:5])
+        self.assertEqual(paths_to_titles(dag, dag.paths(maxlen=2, skip=3)), expected_titles[3:5])
+
+        for i in range(len(dag)):
+            for j in range(i, len(dag)):
+                self.assertEqual(
+                        paths_to_titles(dag, dag.paths(maxlen=j - i, skip=i)),
+                        expected_titles[i:j])
+
+
+class Test_AnnotatedDag_paths_order(unittest.TestCase):
+
+    def setUp(self):
+        self.reader = wikipath.Reader('testdata/example-3.graph')
+        self.dag = self.reader.shortest_path_annotated_dag('Start', 'Finish')
+
+    def test__paths_order(self):
+        dag = self.dag
+
+        for order, expected_titles in [
+            (wikipath.LinkOrder.ID, [
+                    ['Start', 'C', 'G', 'Finish'],
+                    ['Start', 'C', 'H', 'Finish'],
+                    ['Start', 'A', 'G', 'Finish'],
+                    ['Start', 'A', 'H', 'Finish'],
+                    ['Start', 'B', 'G', 'Finish'],
+                    ['Start', 'B', 'H', 'Finish'],
+                ]),
+            (wikipath.LinkOrder.TITLE, [
+                    ['Start', 'A', 'G', 'Finish'],
+                    ['Start', 'A', 'H', 'Finish'],
+                    ['Start', 'B', 'G', 'Finish'],
+                    ['Start', 'B', 'H', 'Finish'],
+                    ['Start', 'C', 'G', 'Finish'],
+                    ['Start', 'C', 'H', 'Finish'],
+                ]),
+            (wikipath.LinkOrder.TEXT, [
+                    ['Start', 'A', 'H', 'Finish'],
+                    ['Start', 'A', 'G', 'Finish'],
+                    ['Start', 'B', 'G', 'Finish'],
+                    ['Start', 'B', 'H', 'Finish'],
+                    ['Start', 'C', 'G', 'Finish'],
+                    ['Start', 'C', 'H', 'Finish'],
+                ]),
+        ]:
+            self.assertEqual(paths_to_titles(dag, dag.paths(order=order)), expected_titles)
+            self.assertEqual(paths_to_titles(dag, dag.paths(2, 3, order)), expected_titles[3:5])
+
+            for i in range(len(dag)):
+                for j in range(i, len(dag)):
+                    self.assertEqual(
+                            paths_to_titles(dag, dag.paths(maxlen=j - i, skip=i, order=order)),
+                            expected_titles[i:j])
 
 
 if __name__ == '__main__':

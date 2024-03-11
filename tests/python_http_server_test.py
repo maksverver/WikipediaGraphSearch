@@ -10,7 +10,7 @@ from urllib.error import HTTPError
 
 WIKI_BASE_URL = 'http://example.com/wiki/'
 GRAPH_DIRECTORY = 'testdata'
-GRAPH_FILENAME = 'example.graph'
+GRAPH_FILENAME = 'example-1.graph'
 GRAPH_FILEPATH = os.path.join(GRAPH_DIRECTORY, GRAPH_FILENAME)
 HOST = 'localhost'
 DOCROOT = 'htdocs/'
