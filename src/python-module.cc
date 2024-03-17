@@ -205,6 +205,17 @@ AnnotatedPageWrapper::Links(LinkOrder order) const {
   return res;
 }
 
+std::vector<AnnotatedLinkWrapper> WrapPath(
+      std::span<const AnnotatedLink *const> links,
+      const std::shared_ptr<AnnotatedDagWrapper> &dag) {
+    std::vector<AnnotatedLinkWrapper> path;
+    path.reserve(links.size());
+    for (const AnnotatedLink *link : links) {
+      path.push_back(AnnotatedLinkWrapper(link, dag));
+    }
+    return path;
+}
+
 class AnnotatedDagWrapper {
 public:
   AnnotatedDagWrapper(
@@ -235,12 +246,8 @@ public:
     std::vector<std::vector<AnnotatedLinkWrapper>> paths;
     if (maxlen > 0) {
       (*dag)->EnumeratePaths(
-        [&](std::span<const AnnotatedLink*> links) {
-          std::vector<AnnotatedLinkWrapper> &path = paths.emplace_back();
-          path.reserve(links.size());
-          for (const AnnotatedLink *link : links) {
-            path.push_back(AnnotatedLinkWrapper(link, dag));
-          }
+        [&](std::span<const AnnotatedLink *const> links) {
+          paths.push_back(WrapPath(links, dag));
           return paths.size() < maxlen;
         }, skip, order);
     }
@@ -262,6 +269,42 @@ ShortestPathAnnotatedDag(
   }
   return {};
 }
+
+class PathEnumeratorWrapper {
+public:
+  PathEnumeratorWrapper(PathEnumerator val, std::shared_ptr<AnnotatedDagWrapper> dag)
+      : val(std::move(val)), dag(std::move(dag)) {}
+
+  static PathEnumeratorWrapper Create(const std::shared_ptr<AnnotatedDagWrapper> &dag, int64_t skip, LinkOrder order) {
+    return PathEnumeratorWrapper(PathEnumerator(**dag, skip, order), dag);
+  }
+
+  static PathEnumeratorWrapper CreateCopy(const PathEnumeratorWrapper &obj) {
+    return PathEnumeratorWrapper(obj.val, obj.dag);
+  }
+
+  std::optional<std::vector<AnnotatedLinkWrapper>> Path() const {
+    if (!HasPath()) return {};
+    return WrapPath(val.Path(), dag);
+  }
+
+  bool HasPath() const { return val.HasPath(); }
+  void Advance(int64_t skip) { val.Advance(skip); }
+
+  PathEnumeratorWrapper &Iter() { return *this; }
+
+  std::vector<AnnotatedLinkWrapper> Next() {
+    if (auto path = Path()) {
+      Advance(0);
+      return *path;
+    }
+    throw pybind11::stop_iteration();
+  }
+
+private:
+  PathEnumerator val;
+  std::shared_ptr<AnnotatedDagWrapper> dag;  // keep-alive
+};
 
 }  // namespace
 
@@ -440,6 +483,19 @@ PYBIND11_MODULE(wikipath, module) {
         py::arg_v("maxlen", std::numeric_limits<size_t>::max(), "Maximum number of paths to generate"),
         py::arg_v("skip", size_t{0}, "Number of paths to skip. Useful to implement pagination."),
         py::arg("order") = DEFAULT_LINK_ORDER)
+    .def("path_enumerator", PathEnumeratorWrapper::Create,
+        py::arg("skip") = 0,
+        py::arg("order") = DEFAULT_LINK_ORDER)
+  ;
+
+  py::class_<PathEnumeratorWrapper>(module, "PathEnumerator")
+    .def(py::init(&PathEnumeratorWrapper::CreateCopy))
+    .def_property_readonly("has_path", &PathEnumeratorWrapper::HasPath)
+    .def_property_readonly("path", &PathEnumeratorWrapper::Path)
+    .def("advance", &PathEnumeratorWrapper::Advance, py::arg("skip") = int64_t{0})
+    .def("__bool__", &PathEnumeratorWrapper::HasPath)
+    .def("__iter__", &PathEnumeratorWrapper::Iter)
+    .def("__next__", &PathEnumeratorWrapper::Next)
   ;
 
   py::class_<Reader, std::shared_ptr<Reader>>(module, "Reader")

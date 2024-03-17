@@ -2,10 +2,8 @@
 #define WIKIPATH_ANNOTATED_DAG_H_INCLUDED
 
 #include "wikipath/common.h"
-#include "wikipath/metadata-reader.h"
 #include "wikipath/reader.h"
 
-#include <cassert>
 #include <cstdint>
 #include <functional>
 #include <span>
@@ -100,6 +98,7 @@ private:
     static void SortLinks(std::vector<AnnotatedLink> &links, LinkOrder order);
 
     friend class AnnotatedDag;
+    friend class PathEnumerator;
 
     index_t id;
     mutable std::variant<const Reader*, std::string> reader_or_title;
@@ -142,8 +141,8 @@ public:
     // explicitly enumerating all possible paths.
     int64_t CountPaths() const;
 
-    using Path = std::span<const AnnotatedLink*>;
-    using EnumeratePathsCallback = std::function<bool(Path)>;
+    using path_t = std::span<const AnnotatedLink *const>;
+    using enumerate_paths_callback_t = std::function<bool(path_t)>;
 
     // Enumerate paths from Start() to Finish(), starting from the given 0-based
     // offset.
@@ -153,14 +152,21 @@ public:
     // enumerated, whichever comes first. The function itself returns `false`
     // if the callback ever returned `false`, or `true` otherwise, including in
     // the case were no paths were found so the callback was never called.
+    //
+    // The implementation doesn't copy the spans returned by AnnotatedPage::Links(),
+    // which means it has a weakness: the callback function itself is not allowed
+    // to call Links() or EnumeratePaths() with a different `order` value!
+    //
+    // If this is a concern, then you should use PathEnumerator, declared below,
+    // instead.
     bool EnumeratePaths(
-            const EnumeratePathsCallback &callback,
+            enumerate_paths_callback_t callback,
             int64_t offset = 0, LinkOrder order = DEFAULT_LINK_ORDER) const;
 
 private:
     struct EnumeratePathsContext {
         const AnnotatedPage *finish;
-        const EnumeratePathsCallback *callback;
+        enumerate_paths_callback_t callback;
         int64_t offset;
         LinkOrder order;
         std::vector<const AnnotatedLink*> links;
@@ -172,6 +178,70 @@ private:
     const AnnotatedPage *start;
     const AnnotatedPage *finish;
     std::vector<AnnotatedPage> pages;
+};
+
+// Enumerates paths through the DAG in the given LinkOrder.
+//
+// Example of basic usage:
+//
+//  for (PathEnumerator enumerator(dag); enumerator.HasPath(); enumerator.Advance()) {
+//      auto path = enumerator.Path();
+//      for (const AnnotatedLink *link : path) { /* .. */ }
+//  }
+//
+// This class has a few benefits compared to AnnotatedDag::EnumeratePaths():
+//
+//   - This class does not take a callback function, but instead, allows
+//     the caller to retrieve the current path with Path(), and advance to
+//     the next path with Advance().
+//
+//   - The Advance() method allows efficiently skipping paths.
+//
+//   - This class copies the links onto a stack, which means it's safe to
+//     call AnnotatedPage::Links() with a different order on any of the pages,
+//     unlike EnumeratePaths().
+//
+//   - Instances are copyable, though not in constant time.
+//
+// Compared to EnumeratePaths(), this class might be faster to enumerate all
+// paths, though it might be slower to find only the first path, because it
+// still pushes links to be visited later onto the stack.
+class PathEnumerator {
+public:
+    // Movable and copyable.
+    PathEnumerator(const PathEnumerator&) = default;
+    PathEnumerator& operator=(const PathEnumerator&) = default;
+    PathEnumerator(PathEnumerator&&) = default;
+    PathEnumerator& operator=(PathEnumerator&&) = default;
+
+    // Create a PathEnumerator that skips the first `skip` paths.
+    PathEnumerator(const AnnotatedDag &dag, int64_t skip = 0, LinkOrder order = DEFAULT_LINK_ORDER)
+        : finish(dag.Finish()), order(order) {
+        const AnnotatedPage *start = dag.Start();
+        has_path = start == finish ? skip == 0 : FindPathToFinish(start, skip);
+    }
+
+    using path_t = AnnotatedDag::path_t;
+    path_t Path() const { return path; }
+    bool HasPath() const { return has_path; }
+    operator bool() const { return has_path; }
+
+    // Advances to the next path, after skipping the next `skip` paths.
+    void Advance(int64_t skip = 0) {
+        const AnnotatedPage *page = AdvanceToNextPage(skip);
+        has_path = page != nullptr && FindPathToFinish(page, skip);
+    }
+
+private:
+    const AnnotatedPage *AdvanceToNextPage(int64_t &skip);
+
+    bool FindPathToFinish(const AnnotatedPage *page, int64_t skip);
+
+    bool has_path;
+    const AnnotatedPage *finish;
+    LinkOrder order;
+    std::vector<const AnnotatedLink*> path;
+    std::vector<const AnnotatedLink*> stack;
 };
 
 }  // namespace wikipath

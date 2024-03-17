@@ -396,19 +396,21 @@ class Test_AnnotatedLink(unittest.TestCase):
             ['#6 (H; displayed as: x)', '#5 (G; displayed as: y)'])
 
 
-# Converts a list of paths (where each path is a list of AnnotatedLink objects)
-# to a list of page titles (where page titles are lists of strings).
-def paths_to_titles(dag, paths):
-    def path_titles(path):
-        last_page = dag.start
-        titles = [last_page.title]
-        for link in path:
-            assert link.src == last_page
-            last_page = link.dst
-            titles.append(last_page.title)
-        assert last_page == dag.finish
-        return titles
-    return [path_titles(path) for path in paths]
+# Converts a path (a list of AnnotatedLink objects) to page titles (a list of
+# strings).
+def path_titles(dag, path):
+    last_page = dag.start
+    titles = [last_page.title]
+    for link in path:
+        assert link.src == last_page
+        last_page = link.dst
+        titles.append(last_page.title)
+    assert last_page == dag.finish
+    return titles
+
+# Converts a list of paths to a list of page title lists.
+def paths_titles(dag, paths):
+    return [path_titles(dag, path) for path in paths]
 
 
 class Test_AnnotatedDag(unittest.TestCase):
@@ -416,15 +418,7 @@ class Test_AnnotatedDag(unittest.TestCase):
     def setUp(self):
         self.reader = wikipath.Reader('testdata/example-2.graph')
         self.dag = self.reader.shortest_path_annotated_dag('A2', 'F2')
-
-    def test__count_paths(self):
-        self.assertEqual(self.dag.count_paths(), 7)
-        self.assertEqual(len(self.dag), 7)
-
-    def test__paths(self):
-        dag = self.dag
-
-        expected_titles = [
+        self.expected_titles = [
             ['A2', 'B1', 'C1', 'D1', 'E1', 'F2'],
             ['A2', 'B1', 'C1', 'D1', 'E2', 'F2'],
             ['A2', 'B1', 'C1', 'D1', 'E3', 'F2'],
@@ -434,16 +428,24 @@ class Test_AnnotatedDag(unittest.TestCase):
             ['A2', 'B2', 'C3', 'D2', 'E3', 'F2'],
         ]
 
-        self.assertEqual(paths_to_titles(dag, dag.paths()), expected_titles)
-        self.assertEqual(paths_to_titles(dag, dag.paths(100)), expected_titles)
-        self.assertEqual(paths_to_titles(dag, dag.paths(maxlen=100)), expected_titles)
-        self.assertEqual(paths_to_titles(dag, dag.paths(2, 3)), expected_titles[3:5])
-        self.assertEqual(paths_to_titles(dag, dag.paths(maxlen=2, skip=3)), expected_titles[3:5])
+    def test__count_paths(self):
+        self.assertEqual(self.dag.count_paths(), 7)
+        self.assertEqual(len(self.dag), 7)
+
+    def test__paths(self):
+        dag = self.dag
+        expected_titles = self.expected_titles
+
+        self.assertEqual(paths_titles(dag, dag.paths()), expected_titles)
+        self.assertEqual(paths_titles(dag, dag.paths(100)), expected_titles)
+        self.assertEqual(paths_titles(dag, dag.paths(maxlen=100)), expected_titles)
+        self.assertEqual(paths_titles(dag, dag.paths(2, 3)), expected_titles[3:5])
+        self.assertEqual(paths_titles(dag, dag.paths(maxlen=2, skip=3)), expected_titles[3:5])
 
         for i in range(len(dag)):
             for j in range(i, len(dag)):
                 self.assertEqual(
-                        paths_to_titles(dag, dag.paths(maxlen=j - i, skip=i)),
+                        paths_titles(dag, dag.paths(maxlen=j - i, skip=i)),
                         expected_titles[i:j])
 
     def test__paths__start_is_finish(self):
@@ -451,6 +453,51 @@ class Test_AnnotatedDag(unittest.TestCase):
         self.assertEqual(len(dag), 1)
         self.assertEqual(dag.paths(), [[]])
         self.assertEqual(dag.paths(skip=1), [])
+
+    def test__PathEnumerator__enumerate_all(self):
+        self.assertEqual(
+                paths_titles(self.dag, self.dag.path_enumerator()),
+                self.expected_titles)
+
+    def test__PathEnumerator__copy(self):
+        e = self.dag.path_enumerator(1)
+        self.assertEqual(path_titles(self.dag, e.path), self.expected_titles[1])
+        e.advance(2)
+        f = wikipath.PathEnumerator(e)
+        self.assertEqual(paths_titles(self.dag, e), self.expected_titles[4:])
+        self.assertEqual(paths_titles(self.dag, f), self.expected_titles[4:])
+
+    def test__PathEnumerator__skip(self):
+        all_paths = list(self.dag.path_enumerator())
+        for i in range(len(self.dag)):
+            for j in range(i + 1, len(self.dag)):
+                e = self.dag.path_enumerator(skip=i)
+                self.assertTrue(e)
+                self.assertEqual(e.has_path, True)
+                self.assertEqual(e.path, all_paths[i])
+                e.advance(skip=j - i - 1)
+                self.assertTrue(e)
+                self.assertEqual(path_titles(self.dag, e.path), path_titles(self.dag, all_paths[j]))
+                self.assertEqual(e.path, all_paths[j])
+                e.advance(skip=len(self.dag) - j - 1)
+                self.assertTrue(not e)
+                self.assertEqual(e.has_path, False)
+                self.assertEqual(e.path, None)
+
+    def test__PathEnumerator__skip_all(self):
+        self.assertEqual(self.dag.path_enumerator(skip=999).has_path, False)
+
+        e = self.dag.path_enumerator()
+        e.advance(999)
+        self.assertEqual(e.has_path, False)
+
+
+    def test__PathEnumerator__start_is_finish(self):
+        dag = self.reader.shortest_path_annotated_dag(7, 7)
+        e = dag.path_enumerator()
+        self.assertEqual(e.path, [])
+        e.advance()
+        self.assertEqual(e.path, None)
 
 
 class Test_AnnotatedDag_paths_order(unittest.TestCase):
@@ -488,14 +535,16 @@ class Test_AnnotatedDag_paths_order(unittest.TestCase):
                     ['Start', 'C', 'H', 'Finish'],
                 ]),
         ]:
-            self.assertEqual(paths_to_titles(dag, dag.paths(order=order)), expected_titles)
-            self.assertEqual(paths_to_titles(dag, dag.paths(2, 3, order)), expected_titles[3:5])
+            self.assertEqual(paths_titles(dag, dag.paths(order=order)), expected_titles)
+            self.assertEqual(paths_titles(dag, dag.paths(2, 3, order)), expected_titles[3:5])
 
             for i in range(len(dag)):
                 for j in range(i, len(dag)):
                     self.assertEqual(
-                            paths_to_titles(dag, dag.paths(maxlen=j - i, skip=i, order=order)),
+                            paths_titles(dag, dag.paths(maxlen=j - i, skip=i, order=order)),
                             expected_titles[i:j])
+
+            self.assertEqual(paths_titles(dag, dag.path_enumerator(order=order)), expected_titles)
 
 
 if __name__ == '__main__':

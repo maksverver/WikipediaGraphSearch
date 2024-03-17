@@ -2,9 +2,9 @@
 
 #include "wikipath/reader.h"
 
+#include <cassert>
 #include <algorithm>
 #include <locale>
-#include <ranges>
 #include <string_view>
 #include <unordered_map>
 
@@ -81,7 +81,6 @@ AnnotatedDag::AnnotatedDag(
 		const Reader *reader, index_t start_id, index_t finish_id,
 		const std::vector<std::pair<index_t, index_t>> &edge_list)
             : reader(reader) {
-
     std::unordered_map<index_t, size_t> page_index_by_id;
     auto reserve_page_index = [&](index_t v) {
         auto [it, inserted] = page_index_by_id.insert({v, 0});
@@ -113,12 +112,12 @@ AnnotatedDag::AnnotatedDag(
 }
 
 bool AnnotatedDag::EnumeratePaths(
-        const EnumeratePathsCallback &callback,
+        enumerate_paths_callback_t callback,
         int64_t offset,
         LinkOrder order) const {
     return EnumeratePathsContext{
         .finish = finish,
-        .callback = &callback,
+        .callback = std::move(callback),
         .offset = offset,
         .order = order,
         .links = {},
@@ -131,7 +130,8 @@ int64_t AnnotatedDag::CountPaths() const {
 
 bool AnnotatedDag::EnumeratePathsContext::EnumeratePaths(const AnnotatedPage *page) {
     if (page == finish) {
-        return offset == 0 ? (*callback)(links) : true;
+        return offset == 0 ? callback(links) : true;
+        return callback(links);
     }
     for (const AnnotatedLink &link : page->Links(order)) {
         links.push_back(&link);
@@ -143,6 +143,90 @@ bool AnnotatedDag::EnumeratePathsContext::EnumeratePaths(const AnnotatedPage *pa
         }
         links.pop_back();
     }
+    return true;
+}
+
+// This function moves up the stack to find a page in the DAG from which we can
+// reach the finish after skipping `skip` paths.
+//
+// For example, if the DAG looks like this:
+//
+//
+//         c              |
+//       /  \             |
+//      a     \           |
+//    /  \      \         |
+//  s      d --- f        |
+//    \  /      /         |
+//      b      /          |
+//       \   /            |
+//         e              |
+//
+//
+// Then the first path creates state:
+//
+//   path  = {s->a, a->c, c->f}
+//   stack = {nullptr, s->b, nullptr, a->d, nullptr}
+//
+// And if skip == 0, we compute:
+//
+//   path  = {s->a, a->d}
+//   stack = {nullptr, s->b, nullptr}
+//   page  = d
+//
+// But if skip == 1:
+//
+//   path = {s->b}
+//   stack = {nullptr}
+//   page = b
+//
+// etc.
+//
+// This function returns null if skip >= start.CountPaths(finish).
+//
+const AnnotatedPage *PathEnumerator::AdvanceToNextPage(int64_t &skip) {
+    while (!stack.empty()) {
+        const AnnotatedLink *link = stack.back();
+        stack.pop_back();
+        if (link == nullptr) {
+            path.pop_back();
+        } else {
+            int64_t n;
+            const AnnotatedPage *page = link->Dst();
+            if (skip > 0 && (n = page->PathCount(finish)) <= skip) {
+                skip -= n;
+            } else {
+                path.back() = link;
+                return page;
+            }
+        }
+    }
+    return nullptr;
+}
+
+// Finds a path to the finish after skipping `skip` paths (phrased differently:
+// finds the (skip + 1)'th path), or returns false if that path does not exist.
+bool PathEnumerator::FindPathToFinish(const AnnotatedPage *page, int64_t skip) {
+    assert(page != finish);
+    while (page != finish) {
+        auto links = page->Links(order);
+        size_t i = 0;
+        int64_t n;
+        while (i < links.size() && skip > 0 && (n = links[i].Dst()->PathCount(finish)) <= skip) {
+            skip -= n;
+            ++i;
+        }
+        if (i < links.size()) {
+            page = links[i].Dst();
+            path.push_back(&links[i]);
+            stack.push_back(nullptr);
+            for (size_t j = links.size() - 1; j > i; --j) stack.push_back(&links[j]);
+        } else {
+            page = AdvanceToNextPage(skip);
+            if (page == nullptr) return false;
+        }
+    }
+    assert(skip == 0);
     return true;
 }
 

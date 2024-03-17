@@ -4,13 +4,11 @@
 #include "wikipath/reader.h"
 #include "wikipath/searcher.h"
 
-#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
 #include <limits>
-#include <ranges>
 #include <sstream>
 #include <string_view>
 #include <utility>
@@ -74,9 +72,9 @@ bool SearchClassic(Reader &reader, index_t start, index_t finish) {
 }
 
 void PrintPath(const AnnotatedDag &dag, bool random, LinkOrder order) {
-    auto print_path = [&dag](std::span<const AnnotatedLink*> links) {
+    auto print_path = [&dag](AnnotatedDag::path_t path) {
         std::cout << dag.Start()->Ref() << '\n';
-        for (const AnnotatedLink *link : links) {
+        for (const AnnotatedLink *link : path) {
             std::cout << link->ForwardRef() << '\n';
         }
         return false;  // stop enumerating after first result
@@ -93,9 +91,9 @@ void PrintPath(const AnnotatedDag &dag, bool random, LinkOrder order) {
 void PrintPaths(const AnnotatedDag &dag, int64_t skip, int64_t max, LinkOrder order) {
     if (max <= 0) return;
     if (skip < 0) skip = 0;
-    auto print_path = [&dag, &max](std::span<const AnnotatedLink*> links) {
+    auto print_path = [&dag, &max](AnnotatedDag::path_t path) {
         std::cout << dag.Start()->Ref();
-        for (const AnnotatedLink *link : links) {
+        for (const AnnotatedLink *link : path) {
             std::cout << " -> " << link->ForwardRef();
         }
         std::cout << '\n';
