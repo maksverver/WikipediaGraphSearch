@@ -41,6 +41,17 @@ bool ParseLinkOrder(std::string_view sv, wikipath::LinkOrder &order) {
     return false;
 }
 
+enum class EnumerationMethod {
+    RECURSIVE,
+    ITERATIVE,
+};
+
+bool ParseEnumerationMethod(std::string_view sv, EnumerationMethod &type) {
+    if (sv == "recursive") return type = EnumerationMethod::RECURSIVE, true;
+    if (sv == "iterative") return type = EnumerationMethod::ITERATIVE, true;
+    return false;
+}
+
 }  // namespace
 
 namespace wikipath {
@@ -71,35 +82,71 @@ bool SearchClassic(Reader &reader, index_t start, index_t finish) {
     return true;
 }
 
-void PrintPath(const AnnotatedDag &dag, bool random, LinkOrder order) {
-    auto print_path = [&dag](AnnotatedDag::path_t path) {
-        std::cout << dag.Start()->Ref() << '\n';
-        for (const AnnotatedLink *link : path) {
-            std::cout << link->ForwardRef() << '\n';
-        }
-        return false;  // stop enumerating after first result
-    };
-    int64_t skip = 0;
-    if (random) {
-        int64_t path_count = dag.CountPaths();
-        skip = RandInt<int64_t>(0, path_count - 1);
-        std::cerr << "Randomly selected path " << skip + 1 << " of " << path_count << ".\n";
+struct RecursiveEnumerator {
+    template <class CallbackT>
+    bool operator()(const AnnotatedDag &dag, LinkOrder order, int64_t skip, CallbackT callback) {
+        return dag.EnumeratePaths(std::move(callback), skip, order);
     }
-    dag.EnumeratePaths(print_path, skip, order);
-}
+};
 
-void PrintPaths(const AnnotatedDag &dag, int64_t skip, int64_t max, LinkOrder order) {
-    if (max <= 0) return;
-    if (skip < 0) skip = 0;
-    auto print_path = [&dag, &max](AnnotatedDag::path_t path) {
-        std::cout << dag.Start()->Ref();
-        for (const AnnotatedLink *link : path) {
-            std::cout << " -> " << link->ForwardRef();
+struct IterativeEnumerator {
+    template <class CallbackT>
+    bool operator()(const AnnotatedDag &dag, LinkOrder order, int64_t skip, CallbackT callback) {
+        for (PathEnumerator e(dag, skip, order); e.HasPath(); e.Advance()) {
+            if (!callback(e.Path())) return false;
         }
-        std::cout << '\n';
-        return --max > 0;
-    };
-    dag.EnumeratePaths(print_path, skip, order);
+        return true;
+    }
+};
+
+template <class EnumerateT> struct PathPrinter {
+    // Prints a single path through the DAG. It is either the first path in
+    // the given link order, or if random == true, a randomly selected path.
+    void operator()(EnumerateT enumerate, const AnnotatedDag &dag, LinkOrder order, bool random) {
+        int64_t skip = 0;
+        if (random) {
+            int64_t path_count = dag.CountPaths();
+            skip = RandInt<int64_t>(0, path_count - 1);
+            std::cerr << "Randomly selected path " << skip + 1 << " of " << path_count << ".\n";
+        }
+        enumerate(dag, order, skip, [&dag](AnnotatedDag::path_t path) {
+            std::cout << dag.Start()->Ref() << '\n';
+            for (const AnnotatedLink *link : path) {
+                std::cout << link->ForwardRef() << '\n';
+            }
+            return false;  // stop enumerating after first result
+        });
+    }
+};
+
+template <class EnumerateT> struct PathsPrinter {
+    // Prints multiple paths through the DAG in the given link order, after
+    // skipping the first `skip` paths, and stopping after printing `max` paths.
+    void operator()(EnumerateT enumerate, const AnnotatedDag &dag, LinkOrder order, int64_t skip, int64_t max) {
+        if (max <= 0) return;
+        if (skip < 0) skip = 0;
+        enumerate(dag, order, skip, [&dag, &max](AnnotatedDag::path_t path) {
+            std::cout << dag.Start()->Ref();
+            for (const AnnotatedLink *link : path) {
+                std::cout << " -> " << link->ForwardRef();
+            }
+            std::cout << '\n';
+            return --max > 0;
+        });
+    }
+};
+
+// Helper function to invoke the above functors with different enumerator
+// implementations depending on the EnumerationMethod argument.
+template <template <class> class F, typename ...Args>
+void CallWithEnumerator(EnumerationMethod em, Args&&...args) {
+    switch (em) {
+        case EnumerationMethod::RECURSIVE:
+            return F<RecursiveEnumerator>{}({}, std::forward<Args>(args)...);
+        case EnumerationMethod::ITERATIVE:
+            return F<IterativeEnumerator>{}({}, std::forward<Args>(args)...);
+    }
+    assert(false);  // unreachable
 }
 
 void PrintEdges(Reader &reader, const std::vector<std::pair<index_t, index_t>> &dag) {
@@ -176,6 +223,7 @@ struct Options {
     const char *finish = nullptr;
     DagOutputType output_type = DagOutputType::NONE;
     wikipath::LinkOrder order = wikipath::DEFAULT_LINK_ORDER;
+    EnumerationMethod enumerate = EnumerationMethod::RECURSIVE;
     bool random = false;
     int64_t skip = 0;
     int64_t max = std::numeric_limits<int64_t>::max();
@@ -189,7 +237,10 @@ struct Options {
         start = argv[2];
         finish = argv[3];
         if (argc == 4) return true;
-        if (!ParseDagOutputType(argv[4], output_type)) return false;
+        if (!ParseDagOutputType(argv[4], output_type)) {
+            std::cerr << "Invalid DAG output type: " << argv[4] << '\n';
+            return false;
+        }
         for (int i = 5; i < argc; ++i) {
             std::string_view arg(argv[i]);
             if (output_type == DagOutputType::PATH && arg == "--random") {
@@ -208,6 +259,12 @@ struct Options {
                     && StripPrefix(arg, "--order=")) {
                 if (!ParseLinkOrder(arg, order)) {
                     std::cerr << "Could not parse --order value: " << arg << '\n';
+                    return false;
+                }
+            } else if ((output_type == DagOutputType::PATH || output_type == DagOutputType::PATHS)
+                    && StripPrefix(arg, "--enumerate=")) {
+                if (!ParseEnumerationMethod(arg, enumerate)) {
+                    std::cerr << "Could not parse --enumerate value: " << arg << '\n';
                     return false;
                 }
             } else {
@@ -253,6 +310,8 @@ void PrintUsage(const char *argv0) {
         "                       \"id\"     page id (default)\n"
         "                       \"title\"  page title\n"
         "                       \"text\"   link text\n"
+        "   --enumerate=<method>  selects the method used to enumerate paths; either \n"
+        "                         \"recursive\" (default) or \"iterative\".\n"
         "\n"
         "If <dag-output> is missing, then a single shortest path is printed, calculated using\n"
         "an older algorithm. The output is similar to \"path\", but slightly faster because it\n"
@@ -293,12 +352,13 @@ bool Main(const Options &options) {
             break;
 
         case DagOutputType::PATH:
-            PrintPath(annotated_dag, options.random, options.order);
+            CallWithEnumerator<PathPrinter>(options.enumerate, annotated_dag, options.order, options.random);
             break;
 
         case DagOutputType::PATHS:
-            PrintPaths(annotated_dag, options.skip, options.max, options.order);
+            CallWithEnumerator<PathsPrinter>(options.enumerate, annotated_dag, options.order, options.skip, options.max);
             break;
+
 
         case DagOutputType::EDGES:
             PrintEdges(*reader, *dag);
