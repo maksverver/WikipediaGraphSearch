@@ -6,10 +6,14 @@ arch=('x86_64')
 url="https://github.com/maksverver/WikipediaGraphSearch"
 depends=('sqlite' 'libxml2')
 optdepends=(
+    'mailcap: provides /etc/mime.types used by the Python HTTP server'
     'python: Python bindings and Python HTTP server'
     'wt: Wt HTTP server'
 )
-makedepends=('cmake' 'python' 'pybind11' 'wt')
+# boost: needed by wt to build the (deprecated) websearch binary
+# mailcap: needed for python_http_server_test.py
+# pybind11: needed for the Python bindings
+makedepends=('boost' 'cmake' 'mailcap' 'python' 'pybind11' 'wt')
 
 _build_dir=${startdir}/build-package
 

@@ -14,6 +14,7 @@ Libraries:
   - sqlite3 (https://www.sqlite.org/index.html) (all tools)
   - libxml2 (https://gitlab.gnome.org/GNOME/libxml2) (index, xml-stats)
   - optional: wt (https://www.webtoolkit.eu/wt) (websearch)
+  - optional: boost (https://www.boost.org/) (websearch)
   - optional: pybind11 (https://github.com/pybind/pybind11) (Python module)
 
 
