@@ -33,7 +33,7 @@ std::string BackwardLinkRef(
 class Reader {
 public:
     // Opens the graph and metadata files and returns a reader, or prints an error
-    static std::unique_ptr<Reader> Open(const char *graph_filename);
+    static std::unique_ptr<Reader> Open(const char *graph_filename, GraphReader::OpenOptions graph_options);
 
     // Returns a reference to the open GraphReader.
     const GraphReader &Graph() const { return *graph; }

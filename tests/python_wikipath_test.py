@@ -3,7 +3,7 @@
 import unittest
 import wikipath
 
-class TestGraphReader(unittest.TestCase):
+class Test_GraphReader(unittest.TestCase):
 
     def setUp(self):
         self.reader = wikipath.GraphReader('testdata/example-1.graph')
@@ -50,7 +50,7 @@ class TestGraphReader(unittest.TestCase):
         self.assertTrue(stats.time_taken_ms >= 0)
 
 
-class TestMetadataReader(unittest.TestCase):
+class Test_MetadataReader(unittest.TestCase):
 
     def setUp(self):
         self.reader = wikipath.MetadataReader('testdata/example-1.metadata')
@@ -92,7 +92,7 @@ class TestMetadataReader(unittest.TestCase):
         self.assertEqual(self.reader.get_link(1, 999999999), None)
 
 
-class TestReader(unittest.TestCase):
+class Test_Reader(unittest.TestCase):
 
     def setUp(self):
         self.reader = wikipath.Reader('testdata/example-1.graph')
@@ -196,6 +196,15 @@ class TestReader(unittest.TestCase):
         self.assertEqual(
                 self.reader.backward_link_ref(1, 4),
                 '#1 (Red; displayed as: unknown)')
+
+
+class Test_Reader_OpenOptions(unittest.TestCase):
+
+    def test__lock_into_memory(self):
+        reader = wikipath.Reader('testdata/example-1.graph',
+                wikipath.GraphReader.OpenOptions(lock_into_memory=True))
+        dag = reader.shortest_path_annotated_dag('Rose', 'Red')
+        self.assertEqual(len(dag), 1)
 
 
 class Test_GraphReader_shortest_path_dag(unittest.TestCase):

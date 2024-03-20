@@ -48,8 +48,8 @@ std::string BackwardLinkRef(
     return LinkRef(from_page_id, from_title, to_title, link_text);
 }
 
-std::unique_ptr<Reader> Reader::Open(const char *graph_filename) {
-    std::unique_ptr<GraphReader> graph_reader = GraphReader::Open(graph_filename);
+std::unique_ptr<Reader> Reader::Open(const char *graph_filename, GraphReader::OpenOptions graph_options) {
+    std::unique_ptr<GraphReader> graph_reader = GraphReader::Open(graph_filename, graph_options);
     if (graph_reader == nullptr) {
         std::cerr << "Could not open graph file [" << graph_filename << "]\n";
         return nullptr;

@@ -322,7 +322,7 @@ void PrintUsage(const char *argv0) {
 bool Main(const Options &options) {
     using namespace wikipath;
 
-    std::unique_ptr<Reader> reader = Reader::Open(options.graph_filename);
+    std::unique_ptr<Reader> reader = Reader::Open(options.graph_filename, {});
     if (reader == nullptr) return false;
 
     index_t start = reader->ParsePageArgument(options.start);

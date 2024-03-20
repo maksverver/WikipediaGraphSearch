@@ -80,6 +80,12 @@ std::ostream &operator<<(std::ostream &os, const QuotedString &qs) {
   return os;
 }
 
+std::ostream &operator<<(std::ostream &os, const GraphReader::OpenOptions &options) {
+  return os
+      << "wikipath.GraphReader.OpenOptions(lock_into_memory="
+      << (options.lock_into_memory ? "True" : "False") << ")";
+}
+
 std::ostream &operator<<(std::ostream &os, const SearchStats &stats) {
   return os
       << "wikipath.SearchStats(vertices_reached=" << stats.vertices_reached
@@ -321,8 +327,23 @@ template<> struct std::hash<AnnotatedPageWrapper> {
 };
 
 PYBIND11_MODULE(wikipath, module) {
-  py::class_<GraphReader>(module, "GraphReader")
-      .def(py::init(&GraphReader::Open), py::arg("filename"))
+  py::class_<GraphReader> graph_reader(module, "GraphReader");
+  py::class_<GraphReader::OpenOptions>(graph_reader, "OpenOptions")
+      .def(
+          py::init([](bool lock_into_memory) {
+            return GraphReader::OpenOptions{
+              .lock_into_memory = lock_into_memory,
+            };
+          }),
+          py::kw_only(),
+          py::arg("lock_into_memory") = false)
+      .def_readwrite("lock_into_memory", &GraphReader::OpenOptions::lock_into_memory)
+      .def("__repr__", &ToString<GraphReader::OpenOptions>)
+  ;
+  graph_reader
+      .def(py::init(&GraphReader::Open),
+          py::arg("filename"),
+          py::arg("options") = GraphReader::OpenOptions{})
       .def_property_readonly("vertex_count", &GraphReader::VertexCount)
       .def_property_readonly("edge_count", &GraphReader::EdgeCount)
       .def("forward_edges",
@@ -499,7 +520,9 @@ PYBIND11_MODULE(wikipath, module) {
   ;
 
   py::class_<Reader, std::shared_ptr<Reader>>(module, "Reader")
-      .def(py::init(&Reader::Open), py::arg("graph_filename"))
+      .def(py::init(&Reader::Open),
+          py::arg("graph_filename"),
+          py::arg("options") = GraphReader::OpenOptions{})
       .def_property_readonly("graph", &Reader::Graph)
       .def_property_readonly("metadata", &Reader::Metadata)
       .def("is_valid_page_id", &Reader::IsValidPageId, py::arg("page_id"))

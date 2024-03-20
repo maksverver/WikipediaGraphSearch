@@ -59,7 +59,7 @@ GraphReader::~GraphReader() {
     munmap(data, data_len);
 }
 
-std::unique_ptr<GraphReader> GraphReader::Open(const char *filename) {
+std::unique_ptr<GraphReader> GraphReader::Open(const char *filename, OpenOptions options) {
     int fd = open(filename, O_RDONLY);
     if (fd < 0) return nullptr;
     FdCloser fd_closer{fd};
@@ -78,6 +78,14 @@ std::unique_ptr<GraphReader> GraphReader::Open(const char *filename) {
     // Map entire file into memory.
     void *data = mmap(nullptr, data_len, PROT_READ, MAP_PRIVATE, fd, 0);
     if (data == MAP_FAILED) return nullptr;
+
+    if (options.lock_into_memory) {
+        if (mlock(data, data_len) != 0) {
+            perror("mlock");
+            munmap(data, data_len);
+            return nullptr;
+        }
+    }
 
     return std::unique_ptr<GraphReader>(
         new GraphReader(data, data_len));

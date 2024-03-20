@@ -14,7 +14,7 @@ namespace wikipath {
 namespace {
 
 bool Inspect(const char *graph_filename, const char *page) {
-    std::unique_ptr<Reader> reader = Reader::Open(graph_filename);
+    std::unique_ptr<Reader> reader = Reader::Open(graph_filename, {});
     if (reader == nullptr) return false;
     index_t page_id = reader->ParsePageArgument(page);
     if (page_id == 0) return false;

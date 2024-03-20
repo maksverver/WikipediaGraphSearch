@@ -21,7 +21,7 @@ class ClientError(Exception):
         self.status = status
 
 
-def Serve(*, graph_filename, host, port, docroot, wiki_base_url, thread_daemon=None):
+def Serve(*, graph_filename, lock_into_memory, host, port, docroot, wiki_base_url, thread_daemon=None):
     '''Runs the webserver.
 
     `docroot` is the directory from which static content is served. Careful!
@@ -32,7 +32,7 @@ def Serve(*, graph_filename, host, port, docroot, wiki_base_url, thread_daemon=N
     https://en.wikipedia.org/wiki/ for the English wikipedia.
     '''
 
-    reader = wikipath.Reader(graph_filename)
+    reader = wikipath.Reader(graph_filename, wikipath.GraphReader.OpenOptions(lock_into_memory=lock_into_memory))
 
     # A static byte array that describes the serving corpus, returned by /api/corpus
     get_corpus_response_bytes = json.dumps({
@@ -43,7 +43,6 @@ def Serve(*, graph_filename, host, port, docroot, wiki_base_url, thread_daemon=N
             'edge_count': reader.graph.edge_count,
         }
     }).encode('utf-8')
-
 
     def SendStatusMessage(req, status, message, header_only):
         '''Sends a HTTP response with the given status and message (which must
@@ -241,12 +240,14 @@ def Main():
     parser.add_argument('-d', '--docroot', default="htdocs/", help='Directory with static files to serve')
     parser.add_argument('-h', '--host', default="localhost", help='Host to bind to')
     parser.add_argument('-p', '--port', default="8001", help='Port to bind to')
+    parser.add_argument('--lock_into_memory', default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument('--wiki_base_url', default='https://en.wikipedia.org/wiki/')
     parser.add_argument('filename.graph')
     args = parser.parse_args()
 
     Serve(
         graph_filename = vars(args)['filename.graph'],
+        lock_into_memory = args.lock_into_memory,
         host = args.host,
         port = int(args.port),
         docroot = args.docroot,

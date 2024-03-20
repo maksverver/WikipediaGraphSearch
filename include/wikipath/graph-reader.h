@@ -58,7 +58,16 @@ public:
     GraphReader(const GraphReader&) = delete;
     GraphReader &operator=(const GraphReader&) = delete;
 
-    static std::unique_ptr<GraphReader> Open(const char *filename);
+    struct OpenOptions {
+        // Lock the memory mapped file into memory.
+        //
+        // This increases open time and persistent memory usage, but decreases
+        // latency when searching for paths. This should only be used for
+        // long-running processes, like the websearch app.
+        bool lock_into_memory = false;
+    };
+
+    static std::unique_ptr<GraphReader> Open(const char *filename, OpenOptions options);
 
     // Precondition: i is between 0 and VertexCount() (exclusive)
     edges_t ForwardEdges(index_t i) const { return forward_edges.Edges(i); }

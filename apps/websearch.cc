@@ -247,7 +247,7 @@ int main(int argc, char **argv) {
     };
 
     char *graph_filename = ExtractArg(1);
-    std::unique_ptr<Reader> reader = Reader::Open(graph_filename);
+    std::unique_ptr<Reader> reader = Reader::Open(graph_filename, {});
     if (reader == nullptr) {
         return EXIT_FAILURE;
     }
