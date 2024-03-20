@@ -13,10 +13,24 @@
 #
 # wiki_base_url is optional, and defaults to the base URL of English wikipedia.
 #
-# The Python HTTP server is exposed on port 80. Example run command:
+# The Python HTTP server is exposed on port 8080 by default. Example run command:
 #
-# % (sudo) docker run -p 80:80 wikipath
+# % (sudo) docker run -p 8080:8080 wikipath
 #
+# To run on a different external port:
+#
+# % (sudo) docker run -p 8123:8080 wikipath
+#
+# To run on a different internal port:
+#
+# % (sudo) docker run -p 8080:80 -e PORT=80 wikipath
+#
+# To lock the graph into memory at startup (which increases startup time and
+# persistant memory use, but should decrease path search times):
+#
+# % (sudo) docker run -p 8080:8080 --cap-add IPC_LOCK -e LOCK_INTO_MEMORY=1 wikipath
+#
+# (For LOCK_INTO_MEMORY, any nonempty string counts as enabled, not just "1".)
 
 # Build the Arch Linux package.
 FROM archlinux:latest AS build
@@ -37,7 +51,11 @@ RUN pacman -U wikipath-*.pkg* --noconfirm
 ARG graph_basename=NONEXISTENT
 COPY --link "${graph_basename}".graph "${graph_basename}".metadata /var/lib/wikipath/
 ARG wiki_base_url=https://en.wikipedia.org/wiki/
+ARG default_port=8080
+ENV PORT=${default_port}
+EXPOSE ${PORT}
 ENTRYPOINT /usr/lib/wikipath/http_server.py \
-    -h '' -p 80 -d /usr/share/wikipath/htdocs/ \
+    -h '' -p "${PORT}" -d /usr/share/wikipath/htdocs/ \
     --wiki_base_url "${wiki_base_url}" \
+    ${LOCK_INTO_MEMORY:+--lock_into_memory} \
     /var/lib/wikipath/*.graph
