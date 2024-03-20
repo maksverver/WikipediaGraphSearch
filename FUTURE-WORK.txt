@@ -77,6 +77,35 @@ Various other improvements
     or maybe I could just handle the most common failure case (file does not
     exist) upfromt with a call to std::filesystem::exists().
 
+  - Python module: support a way to close Reader/GraphReader/MetadataReader
+    instances manually.
+
+    This would also allow implementing the context manager protocol
+    (https://peps.python.org/pep-0343/) so graphs can be opened with:
+
+        with wikipath.Reader('filename.graph') as r:
+          # use r
+
+    Currently, I rely on reference counting to dispose the objects when they
+    are no longer used. However, reference counting is an implementation detail
+    of CPython, and other Python implementations (notably, PyPy) delay garbage
+    collection, which is problematic when many Reader objects are created e.g.
+    in a loop: you'd end up with many memory maps and open SQLite3 databases,
+    until you run out of virtual addressing space or file descriptors.
+
+    The reason that this is not an easy change is that if you close the Reader
+    instance on the C++ side, then all derived objects are invalidated and
+    calling their methods would cause the application to crash! The correct way
+    to fix this is to have all derived objects check if the associated
+    GraphReader/MetadataReader object is still open, which requires some serious
+    refactoring of basically all objects in the Python bindings.
+
+    Fixing this is not very urgent since existing Python scripts only open one
+    graph during their lifetime.
+
+    A workaround for the issue is to manually call gc.collect() after you're
+    done with a Reader instance, to clean up all unreachable objects.
+
   - CMake: auto-generate contents of testdata/example.{graph, metadata} from
     example.xml.
 
