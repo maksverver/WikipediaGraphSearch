@@ -4,10 +4,8 @@
 #include "wikipath/random.h"
 
 #include <assert.h>
-#include <string.h>
 #include <stdlib.h>
 
-#include <algorithm>
 #include <iostream>
 #include <optional>
 #include <sstream>
