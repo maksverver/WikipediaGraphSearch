@@ -200,11 +200,13 @@ class Test_Reader(unittest.TestCase):
 
 class Test_Reader_OpenOptions(unittest.TestCase):
 
-    def test__lock_into_memory(self):
-        reader = wikipath.Reader('testdata/example-1.graph',
-                wikipath.GraphReader.OpenOptions(lock_into_memory=True))
-        dag = reader.shortest_path_annotated_dag('Rose', 'Red')
-        self.assertEqual(len(dag), 1)
+    def test__mlock(self):
+        OpenOptions = wikipath.GraphReader.OpenOptions
+        MLock = OpenOptions.MLock
+        for mlock in [MLock.NONE, MLock.FOREGROUND, MLock.BACKGROUND]:
+            reader = wikipath.Reader('testdata/example-1.graph', OpenOptions(mlock=mlock))
+            dag = reader.shortest_path_annotated_dag('Rose', 'Red')
+            self.assertEqual(len(dag), 1)
 
 
 class Test_GraphReader_shortest_path_dag(unittest.TestCase):

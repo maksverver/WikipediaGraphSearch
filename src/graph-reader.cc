@@ -2,15 +2,19 @@
 
 #include "wikipath/graph-header.h"
 
-#include <cassert>
-#include <cstdint>
 #include <fcntl.h>
-#include <limits>
-#include <memory>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include <cassert>
+#include <chrono>
+#include <cstdint>
+#include <iostream>
+#include <limits>
+#include <memory>
+#include <thread>
 
 namespace wikipath {
 namespace {
@@ -19,6 +23,17 @@ struct FdCloser {
     const int fd;
     ~FdCloser() { close(fd); }
 };
+
+static bool MLock(void *data, size_t data_len) {
+    auto start = std::chrono::steady_clock::now();
+    if (mlock(data, data_len) != 0) {
+        perror("mlock");
+        return false;
+    }
+    auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start);
+    std::cerr << "mlock() succeeded in " << elapsed_ms.count() / 1000.0 << " s\n";
+    return true;
+}
 
 }  // namespace
 
@@ -79,12 +94,24 @@ std::unique_ptr<GraphReader> GraphReader::Open(const char *filename, OpenOptions
     void *data = mmap(nullptr, data_len, PROT_READ, MAP_PRIVATE, fd, 0);
     if (data == MAP_FAILED) return nullptr;
 
-    if (options.lock_into_memory) {
-        if (mlock(data, data_len) != 0) {
-            perror("mlock");
-            munmap(data, data_len);
-            return nullptr;
-        }
+    // Lock file into memory, if requested:
+    switch (options.mlock) {
+        case OpenOptions::MLock::NONE:
+            break;
+
+        case OpenOptions::MLock::FOREGROUND:
+            if (!MLock(data, data_len)) {
+                munmap(data, data_len);
+                return nullptr;
+            }
+            break;
+
+        case OpenOptions::MLock::BACKGROUND:
+            {
+                std::thread mlock_thread(&MLock, data, data_len);
+                mlock_thread.detach();
+            }
+            break;
     }
 
     return std::unique_ptr<GraphReader>(

@@ -52,7 +52,7 @@ class TestHttpServer(unittest.TestCase):
         self.url_prefix = f'http://{HOST}:{port}'
         self.server_thread = http_server.Serve(
             wiki_base_url=WIKI_BASE_URL,
-            lock_into_memory=False,
+            mlock='NONE',
             graph_filename=GRAPH_FILEPATH,
             host=HOST, port=port,
             docroot='htdocs/',

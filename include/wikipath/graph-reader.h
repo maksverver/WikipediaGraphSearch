@@ -59,12 +59,34 @@ public:
     GraphReader &operator=(const GraphReader&) = delete;
 
     struct OpenOptions {
-        // Lock the memory mapped file into memory.
-        //
-        // This increases open time and persistent memory usage, but decreases
-        // latency when searching for paths. This should only be used for
-        // long-running processes, like the websearch app.
-        bool lock_into_memory = false;
+        enum class MLock {
+            // Do not lock anything into memory. Pages are swapped in on demand
+            // and may be swapped out at the OS's discretion.
+            //
+            // In this mode, Open() is fast, but queries may be slow because
+            // pages are loaded on-demand. Use this for one-off queries, to avoid
+            // loading more data than necessary.
+            NONE,
+
+            // Lock pages into memory in the foreground. Open() does not return
+            // until all pages are locked into memory, or until mlock() fails in
+            // which case Open() fails too.
+            //
+            // In this mode, Open() is slow, but when it returns, queries are
+            // fast. Use this only for long-running processes, where query
+            // performance is more important than startup latency.
+            FOREGROUND,
+
+            // Lock pages into memory in a background thread. Open() will return
+            // immediately. mlock() failure is ignored, and causes the reader to
+            // behave as with LOCK_NONE.
+            //
+            // This mode is a compromise between NONE and FOREGROUND: Open() is
+            // fast, and initial queries may be slow, but eventually the whole
+            // file is mapped into memory and subsequent queries are fast.
+            BACKGROUND,
+        };
+        MLock mlock = MLock::NONE;
     };
 
     static std::unique_ptr<GraphReader> Open(const char *filename, OpenOptions options);
@@ -79,6 +101,10 @@ public:
     // Number of edges (in one direction only; i.e. the forward and backward edges
     // combined are twice this number).
     index_t EdgeCount() const { return edge_count; }
+
+    // Possible future improvement: expose the live status of MLock via an atomic
+    // variable. Status could be one of: NONE, FOREGROUND_COMPLETED,
+    // BACKGROUND_IN_PROGRESS, BACKGROUND_COMPLETED, BACKGROUND_FAILED.
 
 private:
     GraphReader(void *data, size_t data_len);

@@ -80,10 +80,17 @@ std::ostream &operator<<(std::ostream &os, const QuotedString &qs) {
   return os;
 }
 
+std::ostream &operator<<(std::ostream &os, GraphReader::OpenOptions::MLock mlock) {
+    switch (mlock) {
+        case GraphReader::OpenOptions::MLock::NONE:       return os << "wikipath.GraphReader.OpenOptions.MLock.NONE";
+        case GraphReader::OpenOptions::MLock::FOREGROUND: return os << "wikipath.GraphReader.OpenOptions.MLock.FOREGROUND";
+        case GraphReader::OpenOptions::MLock::BACKGROUND: return os << "wikipath.GraphReader.OpenOptions.MLock.BACKGROUND";
+    }
+    return os << "<invalid>";
+}
+
 std::ostream &operator<<(std::ostream &os, const GraphReader::OpenOptions &options) {
-  return os
-      << "wikipath.GraphReader.OpenOptions(lock_into_memory="
-      << (options.lock_into_memory ? "True" : "False") << ")";
+  return os << "wikipath.GraphReader.OpenOptions(mlock=" << options.mlock << ")";
 }
 
 std::ostream &operator<<(std::ostream &os, const SearchStats &stats) {
@@ -328,16 +335,22 @@ template<> struct std::hash<AnnotatedPageWrapper> {
 
 PYBIND11_MODULE(wikipath, module) {
   py::class_<GraphReader> graph_reader(module, "GraphReader");
-  py::class_<GraphReader::OpenOptions>(graph_reader, "OpenOptions")
+  py::class_<GraphReader::OpenOptions> open_options(graph_reader, "OpenOptions");
+  py::enum_<GraphReader::OpenOptions::MLock>(open_options, "MLock")
+      .value("NONE", GraphReader::OpenOptions::MLock::NONE)
+      .value("FOREGROUND", GraphReader::OpenOptions::MLock::FOREGROUND)
+      .value("BACKGROUND", GraphReader::OpenOptions::MLock::BACKGROUND)
+  ;
+  open_options
       .def(
-          py::init([](bool lock_into_memory) {
+          py::init([](GraphReader::OpenOptions::MLock mlock) {
             return GraphReader::OpenOptions{
-              .lock_into_memory = lock_into_memory,
+              .mlock = mlock,
             };
           }),
           py::kw_only(),
-          py::arg("lock_into_memory") = false)
-      .def_readwrite("lock_into_memory", &GraphReader::OpenOptions::lock_into_memory)
+          py::arg("mlock") = GraphReader::OpenOptions::MLock::NONE)
+      .def_readwrite("mlock", &GraphReader::OpenOptions::mlock)
       .def("__repr__", &ToString<GraphReader::OpenOptions>)
   ;
   graph_reader
