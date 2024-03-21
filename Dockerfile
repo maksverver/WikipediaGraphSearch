@@ -51,11 +51,12 @@ RUN pacman -U wikipath-*.pkg* --noconfirm
 ARG graph_basename=NONEXISTENT
 COPY --link "${graph_basename}".graph "${graph_basename}".metadata /var/lib/wikipath/
 ARG wiki_base_url=https://en.wikipedia.org/wiki/
-ARG default_port=8080
-ENV PORT=${default_port}
+ENV WIKI_BASE_URL=${wiki_base_url}
+ARG port=8080
+ENV PORT=${port}
 EXPOSE ${PORT}
 ENTRYPOINT /usr/lib/wikipath/http_server.py \
     -h '' -p "${PORT}" -d /usr/share/wikipath/htdocs/ \
-    --wiki_base_url "${wiki_base_url}" \
+    --wiki_base_url "${WIKI_BASE_URL}" \
     ${LOCK_INTO_MEMORY:+--lock_into_memory} \
     /var/lib/wikipath/*.graph
