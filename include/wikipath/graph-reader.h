@@ -85,6 +85,12 @@ public:
             // fast, and initial queries may be slow, but eventually the whole
             // file is mapped into memory and subsequent queries are fast.
             BACKGROUND,
+
+            // Add the MAP_POPULATE flag to mmap(). Like FOREGROUND this blocks
+            // the call to Open(), but failure to populate pages does not cause
+            // Open() to fail, and there is no guarantee that pages will remain
+            // locked into memory.
+            POPULATE,
         };
         MLock mlock = MLock::NONE;
     };

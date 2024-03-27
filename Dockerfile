@@ -34,7 +34,9 @@
 # % (sudo) docker run -p 8080:8080 --cap-add IPC_LOCK -e MLOCK=FOREGROUND wikipath
 #
 # Alternatively, MLOCK=BACKGROUND doesn't wait until all memory is locked to
-# start serving requests.
+# start serving requests, and MLOCK=POPULATE doesn't require the IPC_LOCK
+# capability, though neither alternative guarantees that all pages are locked
+# into memory.
 #
 # To upload to Google Cloud Registry so the new image can be deployed on
 # Google Cloud Run:

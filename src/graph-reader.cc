@@ -91,12 +91,15 @@ std::unique_ptr<GraphReader> GraphReader::Open(const char *filename, OpenOptions
     size_t data_len = file_size;
 
     // Map entire file into memory.
-    void *data = mmap(nullptr, data_len, PROT_READ, MAP_PRIVATE, fd, 0);
+    int mmap_flags = MAP_PRIVATE;
+    if (options.mlock == OpenOptions::MLock::POPULATE) mmap_flags |= MAP_POPULATE;
+    void *data = mmap(nullptr, data_len, PROT_READ, mmap_flags, fd, 0);
     if (data == MAP_FAILED) return nullptr;
 
     // Lock file into memory, if requested:
     switch (options.mlock) {
         case OpenOptions::MLock::NONE:
+        case OpenOptions::MLock::POPULATE:
             break;
 
         case OpenOptions::MLock::FOREGROUND:

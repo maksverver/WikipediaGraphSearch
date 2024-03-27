@@ -85,6 +85,7 @@ std::ostream &operator<<(std::ostream &os, GraphReader::OpenOptions::MLock mlock
         case GraphReader::OpenOptions::MLock::NONE:       return os << "wikipath.GraphReader.OpenOptions.MLock.NONE";
         case GraphReader::OpenOptions::MLock::FOREGROUND: return os << "wikipath.GraphReader.OpenOptions.MLock.FOREGROUND";
         case GraphReader::OpenOptions::MLock::BACKGROUND: return os << "wikipath.GraphReader.OpenOptions.MLock.BACKGROUND";
+        case GraphReader::OpenOptions::MLock::POPULATE:   return os << "wikipath.GraphReader.OpenOptions.MLock.POPULATE";
     }
     return os << "<invalid>";
 }
@@ -340,6 +341,7 @@ PYBIND11_MODULE(wikipath, module) {
       .value("NONE", GraphReader::OpenOptions::MLock::NONE)
       .value("FOREGROUND", GraphReader::OpenOptions::MLock::FOREGROUND)
       .value("BACKGROUND", GraphReader::OpenOptions::MLock::BACKGROUND)
+      .value("POPULATE", GraphReader::OpenOptions::MLock::POPULATE)
   ;
   open_options
       .def(

@@ -203,7 +203,7 @@ class Test_Reader_OpenOptions(unittest.TestCase):
     def test__mlock(self):
         OpenOptions = wikipath.GraphReader.OpenOptions
         MLock = OpenOptions.MLock
-        for mlock in [MLock.NONE, MLock.FOREGROUND, MLock.BACKGROUND]:
+        for mlock in [MLock.NONE, MLock.FOREGROUND, MLock.BACKGROUND, MLock.POPULATE]:
             reader = wikipath.Reader('testdata/example-1.graph', OpenOptions(mlock=mlock))
             dag = reader.shortest_path_annotated_dag('Rose', 'Red')
             self.assertEqual(len(dag), 1)
