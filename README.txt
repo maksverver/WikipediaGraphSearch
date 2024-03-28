@@ -246,4 +246,40 @@ startup latency low, while eventually locking the entire file into memory. See
 Dockerfile for details how to enable this feature in a Docker container.
 
 
+RELATED WORK
+
+I found out that there is a similar project called Six Degrees of Wikipedia,
+hosted here: https://www.sixdegreesofwikipedia.com/
+
+There are a few differences with my implementation:
+
+  - Performance: my implementation is a lot faster! About two orders of
+    magnitude: tens of milliseconds vs several seconds for most queries.
+
+  - UI: Six Degrees of Wikipedia looks much more stylish (I'm not a graphic
+    designer). It also has some cool features:
+
+      - The input fields have autocomplete, and show info about the article
+        like a short description and an image.
+      - The result includes multiple paths, not just one.
+      - The result includes the entire DAG rendered as an interactive graph.
+
+    Although I can currently generate all paths, and also the entire DAG (using
+    the `search` tool), this data is not exposed in the web frontend, which only
+    shows a single shortest path.
+
+  - The indexing seems to work slightly differently. Some of the shortest paths
+    reported by Six Degrees of Wikipedia follow links that occur only in the
+    infobox of an article, not in the page source itself. So it looks like Six
+    Degrees of Wikipedia either expands templates, or uses the generated HTML
+    output rather than the XML dumps with wikitext.
+
+    Because Six Degrees of Wikipedia allows more links, it can sometimes find
+    shorter paths than my implementation (though this is very rare!). However,
+    I prefer my implementation because the links that actually appear in the
+    page source tend to be more closely related to the subject of the page than
+    links which come from templates, which typically are included in many
+    different pages.
+
+
 EOF
