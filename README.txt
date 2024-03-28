@@ -207,4 +207,43 @@ production environment, it's more efficient to have a dedicated webserver like
 nginx serve these files statically.
 
 
+NOTES ON THE --mlock OPTION
+
+By default, GraphReader maps the entire graph data file into memory, which does
+not cause the file to be loaded. Instead, pages will be loaded on-demand by the
+kernel when they are first accessed. This is ideal for the command-line tools
+which do only a single search and then exit, since they will only cause the
+small subset of pages that are needed for the search to be loaded.
+
+However, for the HTTP server, which is expected to serve many requests over
+its lifetime, it is more efficient to load the entire graph file into memory up
+front, in order to reduce the latency of each query. This is especially true
+for the Docker image running on e.g. Google Cloud Run where random disk I/O is
+slow.
+
+To improve performance, python/http_server.py supports a few options which allow
+the graph data to be preloaded on startup:
+
+  --mlock=NONE        Load pages on demand (default).
+  --mlock=FOREGROUND  Call mlock() in the foreground.
+  --mlock=BACKGROUND  Call mlock() in the background (ignoring failure).
+  --mlock=POPULATE    Call mmap() with the MAP_POPULATE flag.
+
+See include/wikipath/graph-reader.h for detailed descriptions of these options.
+
+The FOREGROUND and BACKGROUND options use mlock() to lock the entire graph data
+file into memory, which requires the CAP_IPC_LOCK capability and is subject to
+the RLIMIT_MEMLOCK resource limit (which can be raised by root, and changed per
+user via /etc/security/limits.conf).
+
+THE POPULATE option does not use mlock() and provides relatively weak guarantees
+(i.e., it may fail silently, and even if it succeeds, there is no guarantee that
+loaded pages remain resident indefinitely), but it doesn't require special
+permissions.
+
+On Google Cloud Run, I believe --mlock=BACKGROUND works best, because it keeps
+startup latency low, while eventually locking the entire file into memory. See
+Dockerfile for details how to enable this feature in a Docker container.
+
+
 EOF
