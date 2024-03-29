@@ -47,20 +47,36 @@
 #
 
 # Create an up-to-date Arch Linux package.
+#
+# Note that this will be cached. To clear the cache and generate a new and
+# up-to-date image, first run: docker buildx prune --all
 FROM archlinux:latest as archlinux-up-to-date
 RUN pacman -Syu --noconfirm
 
-# Build the app.
-FROM archlinux-up-to-date AS build
+# Create an image with all build dependencies installed. This is a separate
+# image from `build` so that changes to the source code don't cause refetching
+# packages from the internet, which is relatively slow/expensive, and may fail
+# when the base image (archlinux-up-to-date) is outdated. When this fails, just
+# clear the cache as described above.
+FROM archlinux-up-to-date AS archlinux-build
+RUN useradd build
 RUN pacman -S base-devel --noconfirm
-COPY --exclude=data/ . /build
+RUN --mount=type=bind,source=makepkg/PKGBUILD,target=PKGBUILD \
+        bash -c 'source PKGBUILD; pacman -S --noconfirm "${makedepends[@]}"'
+
+# Create an image with runtime dependencies installed. Again, this prevents
+# refetching packages whenever the wikipath package itself changes.
+FROM archlinux-up-to-date AS archlinux-run
+RUN pacman -S python3 --noconfirm
+
+# Build the app.
+FROM archlinux-build AS build
+COPY --exclude=data/ --chown=build . /build
 WORKDIR /build/makepkg/
-RUN bash -c 'source PKGBUILD; pacman -S --noconfirm "${makedepends[@]}"'
-RUN useradd build && chown build . && su build -c 'makepkg -fc'
+RUN su build -c 'makepkg -fc'
 
 # Create the main app image.
-FROM archlinux-up-to-date
-RUN pacman -S python3 --noconfirm
+FROM archlinux-run
 WORKDIR /pkg
 COPY --from=build /build/makepkg/wikipath-*.pkg* .
 RUN pacman -U wikipath-*.pkg* --noconfirm
