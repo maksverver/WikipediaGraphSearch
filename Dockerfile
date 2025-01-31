@@ -51,7 +51,9 @@
 # Note that this will be cached. To clear the cache and generate a new and
 # up-to-date image, first run: docker buildx prune --all
 FROM archlinux:latest as archlinux-up-to-date
-RUN pacman -Syu --noconfirm
+RUN pacman -Sy
+RUN pacman -S archlinux-keyring --noconfirm && pacman-key --init && pacman-key --populate archlinux
+RUN pacman -Su --noconfirm
 
 # Create an image with all build dependencies installed. This is a separate
 # image from `build` so that changes to the source code don't cause refetching
