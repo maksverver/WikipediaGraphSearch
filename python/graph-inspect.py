@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 # A Python script that implements the same functionality as the C++ inspect app.
+#
+# This was renamed from inspect.py to graph-inspect.py to avoid clashing with
+# the Python standard libary module called "inspect".
 
 import sys
 import wikipath

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
 # A Python script that implements the same functionality as the C++ search app.
+#
+# This was renamed from search.py to graph-search.py for consistency with
+# graph-inspect.py which was renamed from inspect.py to avoid clashing with
+# the Python standard library module called "inspect".
 
 import sys
 import wikipath
